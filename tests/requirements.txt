@@ -1,0 +1,9 @@
+PyHamcrest==1.8.5
+argparse==1.2.1
+behave==1.2.5
+enum34==1.0.4
+parse==1.6.6
+parse-type==0.3.4
+requests==2.7.0
+six==1.9.0
+wsgiref==0.1.2
