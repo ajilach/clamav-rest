@@ -19,8 +19,10 @@ build-slug:
 	@tar cf - . | docker run --rm -i -a stdin -a stdout -a stderr flynn/slugbuilder -> target/slug.tgz
 
 test: 
-	
-
+	@rm -rf tests/pyenv
+	@virtualenv tests/pyenv
+	@. tests/pyenv/bin/activate; pip install -r tests/requirements.txt
+	@cd tests; . pyenv/bin/activate; behave
 
 .clamav:
 	@echo "Starting clamav docker image"
