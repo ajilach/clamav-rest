@@ -9,7 +9,7 @@ def step_imp(context, contents):
 @when('I scan the file for a virus')
 def step_impl(context): 
 	files = { 'file': context.file_contents }
-	url = "http://localhost:9000"
+	url = "http://127.0.0.1:9000"
 	r = requests.post(url + "/scan", files=files)
 	context.result = r
 
