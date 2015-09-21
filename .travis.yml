@@ -4,5 +4,6 @@ services:
    - docker
 
 script:
+   - sudo service docker restart; sleep 10
    - make run-container
    - make test
