@@ -5,6 +5,7 @@ ADD . /go/src/github.com/osterzel/clamrest
 WORKDIR /go/src/github.com/osterzel/clamrest
 RUN go get 
 RUN go install github.com/osterzel/clamrest
+RUN rm -rf /go/src/github.com/osterzel/clamrest
 
 ENTRYPOINT /go/bin/clamrest
 
