@@ -1,5 +1,5 @@
 Build status:
-- [![Build Status](https://travis-ci.org/osterzel/clamav-rest.svg)]
+- ![Build Status](https://travis-ci.org/osterzel/clamav-rest.svg)
 
 This repository contains a basic rest api for clamav which allows sites to scan files as they are uploaded
 
