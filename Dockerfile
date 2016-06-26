@@ -1,7 +1,12 @@
-FROM scratch 
+FROM golang:1.3
 
-ADD target/clamrest / 
+ADD . /go/src/github.com/osterzel/clamrest
 
-CMD ["/clamrest"]
+WORKDIR /go/src/github.com/osterzel/clamrest
+RUN go get 
+RUN go install github.com/osterzel/clamrest
+RUN rm -rf /go/src/github.com/osterzel/clamrest
+
+ENTRYPOINT /go/bin/clamrest
 
 EXPOSE 8080

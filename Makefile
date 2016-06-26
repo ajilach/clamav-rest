@@ -6,7 +6,6 @@ run-container: .clamav build-container
 	@docker run -d -p 9000:9000 -e PORT=9000 --name $(SERVICE) --link clamd:clamd $(SERVICE):$(VERSION)
 
 build-container:
-	docker run --rm -t -i -v $(shell pwd):/go/src/github.com/osterzel/clamrest -v $(shell pwd)/target:/go/bin golang:1.3 /bin/bash -c "/go/src/github.com/osterzel/clamrest/scripts/build-static-binary"
 	docker build -t $(SERVICE):$(VERSION) .
 
 run-slug: .clamav build-slug
