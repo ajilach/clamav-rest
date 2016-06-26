@@ -45,13 +45,14 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			fmt.Printf(time.Now().Format(time.RFC3339) + " Started scanning: " + part.FileName() + "\n")
-			response,  err := c.ScanStream(part);
+                        var abort chan bool;
+			response,  err := c.ScanStream(part, abort);
 			for s := range response {
-				if strings.Contains(s, "FOUND") {
-					http.Error(w, s, http.StatusInternalServerError)
-				} else {
-					fmt.Fprintf(w, s)
-				}
+                if strings.Contains(s.Status, "FOUND") {
+                	//return_string := []string{"Result: ", s.Status, ", Description: ", s.Description}
+                	http.Error(w, "Result: " + s.Status + ", Description: " + s.Description, http.StatusInternalServerError)
+                }
+ 				
 				fmt.Printf(time.Now().Format(time.RFC3339) + " Scan result for: %v, %v\n", part.FileName(), s)
 			}
 			fmt.Printf(time.Now().Format(time.RFC3339) + " Finished scanning: " + part.FileName() + "\n")
