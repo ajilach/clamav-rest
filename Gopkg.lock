@@ -1,0 +1,7 @@
+memo = "6d565002a9a2af555327a35b973166b0b4d3cc082fa045bd3917e34205a70a05"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dutchcoders/go-clamd"
+  packages = ["."]
+  revision = "b970184f4d9e88ff402581ec3dd3b9d074cfb90c"
