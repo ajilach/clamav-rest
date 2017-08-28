@@ -1,12 +1,19 @@
-FROM golang:1.3
+FROM alpine
+MAINTAINER Niilo Ursin <niilo.ursin+nospam_github@gmail.com>
 
-ADD . /go/src/github.com/osterzel/clamrest
+RUN apk --no-cache add clamav clamav-libunrar \
+    && mkdir /run/clamav \
+    && chown clamav:clamav /run/clamav
 
-WORKDIR /go/src/github.com/osterzel/clamrest
-RUN go get 
-RUN go install github.com/osterzel/clamrest
-RUN rm -rf /go/src/github.com/osterzel/clamrest
+RUN sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/clamd.conf \
+    && sed -i 's/^#TCPSocket .*$/TCPSocket 3310/g' /etc/clamav/clamd.conf \
+    && sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/freshclam.conf
 
-ENTRYPOINT /go/bin/clamrest
+RUN freshclam --quiet
 
-EXPOSE 8080
+COPY entrypoint.sh /usr/bin/
+COPY clamav-rest /usr/bin/
+
+EXPOSE 9000
+
+ENTRYPOINT [ "entrypoint.sh" ]
