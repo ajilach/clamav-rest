@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"time"
-	"strings"
-	"log"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
-	"github.com/dutchcoders/go-clamd"
 	"os"
+	"strings"
+	"time"
+
+	"github.com/dutchcoders/go-clamd"
 )
 
 var opts map[string]string
@@ -45,18 +46,27 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			fmt.Printf(time.Now().Format(time.RFC3339) + " Started scanning: " + part.FileName() + "\n")
-                        var abort chan bool;
-			response,  err := c.ScanStream(part, abort);
+			var abort chan bool
+			response, err := c.ScanStream(part, abort)
 			for s := range response {
-                if strings.Contains(s.Status, "FOUND") {
-                	//return_string := []string{"Result: ", s.Status, ", Description: ", s.Description}
-                	http.Error(w, "Result: " + s.Status + ", Description: " + s.Description, http.StatusInternalServerError)
-                }
- 				
-				fmt.Printf(time.Now().Format(time.RFC3339) + " Scan result for: %v, %v\n", part.FileName(), s)
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				respJson := fmt.Sprintf("{ Status: \"%s\", Description: \"%s\" }", s.Status, s.Description)
+				switch s.Status {
+				case clamd.RES_OK:
+					w.WriteHeader(http.StatusOK)
+				case clamd.RES_FOUND:
+					w.WriteHeader(http.StatusNotAcceptable)
+				case clamd.RES_ERROR:
+					w.WriteHeader(http.StatusBadRequest)
+				case clamd.RES_PARSE_ERROR:
+					w.WriteHeader(http.StatusPreconditionFailed)
+				default:
+					w.WriteHeader(http.StatusNotImplemented)
+				}
+				fmt.Fprint(w, respJson)
+				fmt.Printf(time.Now().Format(time.RFC3339)+" Scan result for: %v, %v\n", part.FileName(), s)
 			}
 			fmt.Printf(time.Now().Format(time.RFC3339) + " Finished scanning: " + part.FileName() + "\n")
-
 		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -73,7 +83,7 @@ func main() {
 	}
 
 	if opts["CLAMD_PORT"] == "" {
-		opts["CLAMD_PORT"] = "tcp://localhost:3031"
+		opts["CLAMD_PORT"] = "tcp://localhost:3310"
 	}
 
 	fmt.Printf("Starting clamav rest bridge\n")
@@ -87,14 +97,16 @@ func main() {
 		os.Exit(1)
 	}
 	for version_string := range version {
-		fmt.Printf("Clamd version: %v\n", version_string)
+		fmt.Printf("Clamd version: %#v\n", version_string.Raw)
 	}
 	fmt.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
 
 	http.HandleFunc("/scan", scanHandler)
 
 	//Listen on port PORT
-	if opts["PORT"] == "" { opts["PORT"] = "9000" }
+	if opts["PORT"] == "" {
+		opts["PORT"] = "9000"
+	}
 	fmt.Printf("Listening on port " + opts["PORT"])
-	http.ListenAndServe(":" + opts["PORT"], nil)
+	http.ListenAndServe(":"+opts["PORT"], nil)
 }
