@@ -19,6 +19,10 @@ func init() {
 	log.SetOutput(ioutil.Discard)
 }
 
+func home(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, "...running...")
+}
+
 //This is where the action happens.
 func scanHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -73,6 +77,27 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func waitForClamD(port string, times int) {
+	clamdTest := clamd.NewClamd(port)
+	clamdTest.Ping()
+	version, err := clamdTest.Version()
+
+	if err != nil {
+		if times < 30 {
+			fmt.Printf("clamD not running, waiting times [%v]\n", times)
+			time.Sleep(time.Second * 4)
+			waitForClamD(port, times+1)
+		} else {
+			fmt.Printf("Error getting clamd version: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		for version_string := range version {
+			fmt.Printf("Clamd version: %#v\n", version_string.Raw)
+		}
+	}
+}
+
 func main() {
 
 	opts = make(map[string]string)
@@ -88,20 +113,12 @@ func main() {
 
 	fmt.Printf("Starting clamav rest bridge\n")
 	fmt.Printf("Connecting to clamd on %v\n", opts["CLAMD_PORT"])
-	clamd_test := clamd.NewClamd(opts["CLAMD_PORT"])
-	clamd_test.Ping()
-	version, err := clamd_test.Version()
+	waitForClamD(opts["CLAMD_PORT"], 1)
 
-	if err != nil {
-		fmt.Printf("Error getting clamd version: %v\n", err)
-		os.Exit(1)
-	}
-	for version_string := range version {
-		fmt.Printf("Clamd version: %#v\n", version_string.Raw)
-	}
 	fmt.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
 
 	http.HandleFunc("/scan", scanHandler)
+	http.HandleFunc("/", home)
 
 	//Listen on port PORT
 	if opts["PORT"] == "" {
