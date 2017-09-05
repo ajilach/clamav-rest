@@ -1,7 +1,6 @@
 #!/bin/sh
 freshclam -d &
 clamd &
-sleep 20
 /usr/bin/clamav-rest &
 
 pids=`jobs -p`
