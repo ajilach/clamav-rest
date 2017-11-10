@@ -1,16 +1,17 @@
 sudo: required
 language: go
 go:
-  - master
+- master
 env:
-    - GIMME_OS=linux GIMME_ARCH=amd64
+  matrix:
+  - GIMME_OS=linux GIMME_ARCH=amd64
+  global:
+  - secure: Qo/23l4TtlINuis2PdsoF+Ys0WoRlp6O833roTm3rTgR0DNnVELGyEIcBlGwmU8x4StzCBA9IpBFMDLX/z/PqLHIB2fW+HdKB+GnNqAVuiPosSBY9PGIHUIl2UG4YHjoqvZeOOhwzODM6ZEiznCKrL/k6M0X5VbWnKO6iTqIABnNBLC9+C4CzAe3ooPAN953AkDfAL/cU7eY+hW0sokMPkciTUxT9gfBFP+yQkSgcXLzBJ1Qlb/jTw4NYwyhaXqda1Lsz3Cx63mHKk/tVIHgpGvQkEj5bixsev6U0GmCXGYhvJCVBYIGeTPD9nwS3TGzhCd31SLsaDxIS+QbD+3BtpY0Q+lpF7Zwzg3vPJ0i4+l/nlMI43qAx+PGImM5NxyqdFxRJQYJUOUya7X3bcBSFpXGkhQVWRfbbcmjzkhIRyW2yh4MB6h2sQ5Q5RVpKt9NgqiArdkBBdGjzs/kGfdtK/mKihh7aH2qvQSLtvnZWbVxDUtveb42W8Sye7o1SJb34rCdji6XC1F7JhmZXdWxTBJiQ1HVfF4DiBH+o7PJWkSN0/70bmFJmbRhkul71vd203JnMucaIl5zXmng2HUT3j1HTJCIceRcjNhgoc774gJRuO7n9FvSdMxfyHoDskWkZ5+4krE4VW8E2O+uXV8JUfwSD3Xt609+eQIQFxr85Fw=
+  - secure: LVNiQHUTV7bRWM2nVs8Nv361njr5ch48zHBkDp/wSEdYu79y3BodZvmQfY4RHMLZhnqYrUoR1evIR0DRyt93nnaHmDZfUDtCV4LPb79JIV2b4M6M+v7qWtNIJXSM5+HhVlTUFiEIqVpWygWSlsxT92xgdre2dbPCfhZfjAOrMiQeCY5k2f6qhkmdjSzq6BKVjkk2PNOVb/kdWYmx207yiIuZOwpyH+k4RnzmSYM4gtQVg+wJ1yp84iaR3io1yS8zAeA/1eWWhzVh8pRO67lrbwcwgg1/ibdS7RFIZsLdR8D5G3Doc8Npb5vggH0jWzxoJ7fbjLX2Z6BunVLf6zTx1RJxKIQSmbetJhHq5TVCxdf0sPLfgAHc5MpXjzIvRiUSJwbxQ9ZoL54Skq1Wy9iRmJLZtv+H/YOcVcEPtKW0DmtozPJlnAYIUw+643xMFISZiv8PcoXyhWdz3wlB8fXV3ewpNniKGgxN0FLXUGfMGUv6eo2yeAbd+0R8HJc+BrjXIFduhFphHSXgttxR+VHhsVgF9cV9zxTm8DzGGrei9ftdXFmLD4Y0UYjM7cA00JLzt0UrRoU+xF6khvvJkVJRmpRJckLythqAmANvGJ5VcR7CaVxrMQFdbcOn0Vf+JFXwJ+/n5Yy6QJIXnQkeVfkZGYhPEkP5kpWrYYl8LQWukdU=
 services:
-  - docker
+- docker
 script:
-    - go build -v ./...
-    - docker build --no-cache -t niilo/clamav-rest .
+- go build -v ./...
+- docker build --no-cache -t niilo/clamav-rest .
 after_success:
-  - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-    docker push niilo/clamav-rest;
-    fi
+- if [ "$TRAVIS_BRANCH" == "master" ]; then docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"; docker push niilo/clamav-rest; fi
