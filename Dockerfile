@@ -1,3 +1,9 @@
+# build stage
+FROM golang:alpine AS build-env
+ADD . /go/src/github.com/niilo/clamav-rest/
+RUN cd /go/src/github.com/niilo/clamav-rest && go build -v
+
+# dockerize stage
 FROM alpine
 MAINTAINER Niilo Ursin <niilo.ursin+nospam_github@gmail.com>
 
@@ -12,7 +18,7 @@ RUN sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/clamd.conf \
 RUN freshclam --quiet
 
 COPY entrypoint.sh /usr/bin/
-COPY clamav-rest /usr/bin/
+COPY --from=build-env /go/src/github.com/niilo/clamav-rest/clamav-rest /usr/bin/
 
 EXPOSE 9000
 
