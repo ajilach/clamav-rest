@@ -8,7 +8,6 @@ env:
 services:
 - docker
 script:
-- env GOOS=linux GOARCH=amd64 go build -v
 - docker build --no-cache -t niilo/clamav-rest .
 after_success:
 - if [ "$TRAVIS_BRANCH" == "master" ]; then docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"; docker push niilo/clamav-rest; fi
