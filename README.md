@@ -5,8 +5,7 @@ This is two in one docker image so it runs open source virus scanner ClamAV (htt
 Travis CI build will build new release on weekly basis and push those to Docker hub [ClamAV-rest docker image](https://hub.docker.com/r/niilo/clamav-rest/). Virus definitions will be updated on every docker build.
 
 
-
-##Usage
+## Usage:
 
 Run clamav-rest docker image:
 ```bash
@@ -40,7 +39,7 @@ Content-Length: 33
 { Status: "OK", Description: "" }
 ```
 
-*Status codes:*
+**Status codes:**
 - 200 - clean file = no KNOWN infections
 - 406 - INFECTED
 - 400 - ClamAV returned general error for file
@@ -48,7 +47,7 @@ Content-Length: 33
 - 501 - unknown request
 
 
-##Developing:
+## Developing:
 
 Build golang (linux) binary and docker image:
 ```bash
