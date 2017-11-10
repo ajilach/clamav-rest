@@ -1,7 +1,7 @@
 sudo: required
 language: go
 go:
-- master
+- tip
 env:
   matrix:
   - GIMME_OS=linux GIMME_ARCH=amd64
