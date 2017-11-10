@@ -1,9 +1,16 @@
 sudo: required
-
+language: go
+go:
+  - master
+env:
+    - GIMME_OS=linux GIMME_ARCH=amd64
 services:
-   - docker
-
+  - docker
 script:
-   - sudo service docker restart; sleep 10
-   - make run-container
-   - make test
+    - go build -v ./...
+    - docker build --no-cache -t niilo/clamav-rest .
+after_success:
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
+    docker push niilo/clamav-rest;
+    fi
