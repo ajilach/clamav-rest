@@ -6,7 +6,7 @@ Travis CI build will build new release on weekly basis and push those to Docker 
 
 
 
-h2. Usage
+##Usage
 
 Run clamav-rest docker image:
 ```bash
@@ -48,7 +48,7 @@ Content-Length: 33
 - 501 - unknown request
 
 
-h2. Developing:
+##Developing:
 
 Build golang (linux) binary and docker image:
 ```bash
