@@ -1,17 +1,12 @@
 ![Build Status](https://travis-ci.org/niilo/clamav-rest.svg) [![Docker Pulls](https://img.shields.io/docker/pulls/niilo/clamav-rest.svg)]()
 
-This repository contains a basic rest api for clamav which allows sites to scan files as they are uploaded
+This is two in one docker image so it runs open source virus scanner ClamAV (https://www.clamav.net/), automatic virus definition updates as background process and REST api interface to interact with ClamAV process.
 
-!! Project needs cleenup, Makefile and documentation doesn't match current status !!
+Travis CI build will build new release on weekly basis and push those to Docker hub [ClamAV-rest docker image](https://hub.docker.com/r/niilo/clamav-rest/). Virus definitions will be updated on every docker build.
 
-Usage:
 
-build golang binary and docker image:
-```bash
-env GOOS=linux GOARCH=amd64 go build
-docker build . -t niilo/clamav-rest
-docker run -p 9000:9000 --rm -it niilo/clamav-rest
-```
+
+h2. Usage
 
 Run clamav-rest docker image:
 ```bash
@@ -43,4 +38,21 @@ Date: Mon, 28 Aug 2017 20:23:16 GMT
 Content-Length: 33
 
 { Status: "OK", Description: "" }
+```
+
+*Status codes:*
+200 - clean file = no KNOWN infections
+406 - INFECTED
+400 - ClamAV returned general error for file
+412 - unable to parse file
+501 - unknown request
+
+
+h2. Developing
+
+Build golang (linux) binary and docker image:
+```bash
+env GOOS=linux GOARCH=amd64 go build
+docker build . -t niilo/clamav-rest
+docker run -p 9000:9000 --rm -it niilo/clamav-rest
 ```
