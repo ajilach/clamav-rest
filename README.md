@@ -41,14 +41,14 @@ Content-Length: 33
 ```
 
 *Status codes:*
-200 - clean file = no KNOWN infections
-406 - INFECTED
-400 - ClamAV returned general error for file
-412 - unable to parse file
-501 - unknown request
+- 200 - clean file = no KNOWN infections
+- 406 - INFECTED
+- 400 - ClamAV returned general error for file
+- 412 - unable to parse file
+- 501 - unknown request
 
 
-h2. Developing
+h2. Developing:
 
 Build golang (linux) binary and docker image:
 ```bash
