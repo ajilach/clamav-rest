@@ -1,10 +1,8 @@
-Build status:
-- ![Build Status](https://travis-ci.org/niilo/clamav-rest.svg)
-- ![Container_status](https://quay.io/repository/niilo/clamav-rest/status)
+![Build Status](https://travis-ci.org/niilo/clamav-rest.svg) [![Docker Pulls](https://img.shields.io/docker/pulls/mashape/kong.svg)]()
 
 This repository contains a basic rest api for clamav which allows sites to scan files as they are uploaded
 
-!! Project needs cleenup, Makefile and documentation oesn't match current status !!
+!! Project needs cleenup, Makefile and documentation doesn't match current status !!
 
 Usage:
 
