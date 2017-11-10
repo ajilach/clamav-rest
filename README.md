@@ -1,4 +1,4 @@
-![Build Status](https://travis-ci.org/niilo/clamav-rest.svg) [![Docker Pulls](https://img.shields.io/docker/pulls/mashape/kong.svg)]()
+![Build Status](https://travis-ci.org/niilo/clamav-rest.svg) [![Docker Pulls](https://img.shields.io/docker/pulls/niilo/clamav-rest.svg)]()
 
 This repository contains a basic rest api for clamav which allows sites to scan files as they are uploaded
 
