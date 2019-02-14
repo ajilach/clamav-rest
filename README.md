@@ -52,7 +52,7 @@ $ curl http://localhost:9000/scanPath?path=/scan-target
 
 Build golang (linux) binary and docker image:
 ```bash
-env GOOS=linux GOARCH=amd64 go build
-docker build . -t niilo/clamav-rest
-docker run -p 9000:9000 --rm -it niilo/clamav-rest
+# env GOOS=linux GOARCH=amd64 go build
+docker build . -t clamav-go-rest
+docker run -p 9000:9000 --rm -it clamav-go-rest
 ```
