@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,8 +10,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/dutchcoders/go-clamd"
 )
 
 var opts map[string]string
@@ -20,7 +19,64 @@ func init() {
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "...running...")
+	c := clamd.NewClamd(opts["CLAMD_PORT"])
+
+	response, err := c.Stats()
+
+	if err != nil {
+		errJson, eErr := json.Marshal(err)
+		if eErr != nil {
+			fmt.Println(eErr)
+			return
+		}
+		fmt.Fprint(w, string(errJson))
+		return
+	}
+
+	resJson, eRes := json.Marshal(response)
+	if eRes != nil {
+		fmt.Println(eRes)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	fmt.Fprint(w, string(resJson))
+}
+
+func scanPathHandler(w http.ResponseWriter, r *http.Request) {
+	paths, ok := r.URL.Query()["path"]
+	if !ok || len(paths[0]) < 1 {
+		log.Println("Url Param 'path' is missing")
+		return
+	}
+
+	path := paths[0]
+
+	c := clamd.NewClamd(opts["CLAMD_PORT"])
+	response, err := c.AllMatchScanFile(path)
+
+	if err != nil {
+		errJson, eErr := json.Marshal(err)
+		if eErr != nil {
+			fmt.Println(eErr)
+			return
+		}
+		fmt.Fprint(w, string(errJson))
+		return
+	}
+
+	var scanResults []*clamd.ScanResult
+
+	for responseItem := range response {
+		scanResults = append(scanResults, responseItem)
+	}
+
+	resJson, eRes := json.Marshal(scanResults)
+	if eRes != nil {
+		fmt.Println(eRes)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	fmt.Fprint(w, string(resJson))
 }
 
 //This is where the action happens.
@@ -118,6 +174,7 @@ func main() {
 	fmt.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
 
 	http.HandleFunc("/scan", scanHandler)
+	http.HandleFunc("/scanPath", scanPathHandler)
 	http.HandleFunc("/", home)
 
 	//Listen on port PORT
