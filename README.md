@@ -37,7 +37,7 @@ Content-Length: 33
 
 Test that service returns results for scan target directory:
 ```bash
-$ curl http://localhost:9000/scanPath?path=/scan-target
+$ curl -i http://localhost:9000/scanPath?path=/scan-target
 ```
 
 **Status codes:**
