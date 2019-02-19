@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"github.com/dutchcoders/go-clamd"
 )
 
 var opts map[string]string
