@@ -1,11 +1,10 @@
 This is two in one docker image so it runs open source virus scanner ClamAV (https://www.clamav.net/), automatic virus definition updates as background process and REST api interface to interact with ClamAV process.
 
-
 ## Usage:
 
 Run clamav-rest docker image:
 ```bash
-docker run -p 9000:9000 -v ./scan-target:/scan-target --rm -it clamav-go-rest
+docker run -p 9000:9000 -itd --name clamav-rest ajilaag/clamav-rest
 ```
 
 Test that service detects common test virus signature:
@@ -35,15 +34,10 @@ Content-Length: 33
 { Status: "OK", Description: "" }
 ```
 
-Test that service returns results for scan target directory:
-```bash
-$ curl -i http://localhost:9000/scanPath?path=/scan-target
-```
-
 **Status codes:**
 - 200 - clean file = no KNOWN infections
-- 406 - INFECTED
 - 400 - ClamAV returned general error for file
+- 406 - INFECTED
 - 412 - unable to parse file
 - 501 - unknown request
 
@@ -54,5 +48,5 @@ Build golang (linux) binary and docker image:
 ```bash
 # env GOOS=linux GOARCH=amd64 go build
 docker build . -t clamav-go-rest
-docker run -p 9000:9000 --rm -it clamav-go-rest
+docker run -p 9000:9000 -itd --name clamav-rest clamav-go-rest
 ```
