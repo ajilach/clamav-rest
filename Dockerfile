@@ -21,12 +21,14 @@ RUN freshclam --quiet --no-dns --checks=2
 
 # Build go package
 ADD . /go/src/clamav-rest/
+ADD ./server.* /etc/ssl/clamav-rest/
 RUN cd /go/src/clamav-rest && go build -v
 
 COPY entrypoint.sh /usr/bin/
 RUN mv /go/src/clamav-rest/clamav-rest /usr/bin/ && rm -Rf /go/src/clamav-rest
 
 EXPOSE 9000
+EXPOSE 9443
 
 ENV MAX_SCAN_SIZE=100M
 ENV MAX_FILE_SIZE=25M

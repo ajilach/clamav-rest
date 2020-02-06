@@ -30,12 +30,14 @@ RUN sed -i 's/^Example$/# Example/g' /etc/clamd.d/scan.conf \
 
 # Build go package
 ADD . /go/src/clamav-rest/
+ADD ./server.* /etc/ssl/clamav-rest/
 RUN cd /go/src/clamav-rest/ && go build -v
 
 COPY entrypoint.sh /usr/bin/
 RUN mv /go/src/clamav-rest/clamav-rest /usr/bin/ && rm -Rf /go/src/clamav-rest
 
 EXPOSE 9000
+EXPOSE 9443
 
 RUN freshclam --quiet
 
