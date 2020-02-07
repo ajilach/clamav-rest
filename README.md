@@ -36,10 +36,12 @@ The following image tags are available:
 
 Run clamav-rest docker image:
 ```bash
-docker run -p 9000:9000 -itd --name clamav-rest ajilaag/clamav-rest
+docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest ajilaag/clamav-rest
 ```
 
 Test that service detects common test virus signature:
+
+**HTTP**
 ```bash
 $ curl -i -F "file=@eicar.com.txt" http://localhost:9000/scan
 HTTP/1.1 100 Continue
@@ -52,7 +54,22 @@ Content-Length: 56
 { Status: "FOUND", Description: "Eicar-Test-Signature" }
 ```
 
+**HTTPS**
+```bash
+$ curl -i -k -F "file=@eicar.com.txt" https://localhost:9443/scan
+HTTP/1.1 100 Continue
+
+HTTP/1.1 406 Not Acceptable
+Content-Type: application/json; charset=utf-8
+Date: Mon, 28 Aug 2017 20:22:34 GMT
+Content-Length: 56
+
+{ Status: "FOUND", Description: "Eicar-Test-Signature" }
+```
+
 Test that service returns 200 for clean file:
+
+**HTTP**
 ```bash
 $ curl -i -F "file=@clamrest.go" http://localhost:9000/scan
 
@@ -65,6 +82,21 @@ Content-Length: 33
 
 { Status: "OK", Description: "" }
 ```
+**HTTPS**
+```bash
+$ curl -i -k -F "file=@clamrest.go" https://localhost:9443/scan
+
+HTTP/1.1 100 Continue
+
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Date: Mon, 28 Aug 2017 20:23:16 GMT
+Content-Length: 33
+
+{ Status: "OK", Description: "" }
+```
+
+
 
 ## Status Codes
 - 200 - clean file = no KNOWN infections
@@ -94,6 +126,7 @@ Below is the complete list of available options that can be used to customize yo
 | `MAX_ICONSPE` | How many Icons in PE to scan - Default `100` |
 | `PCRE_MATCHLIMIT` | Maximum PCRE Match Calls - Default `100000` |
 | `PCRE_RECMATCHLIMIT` | Maximum Recursive Match Calls to PCRE - Default `2000` |
+| `SIGNATURE_CHECKS` | Check times per day for a new database signature. Must be between 1 and 50. - Default `24` |
 
 ## Networking
 
@@ -108,7 +141,7 @@ Below is the complete list of available options that can be used to customize yo
 For debugging and maintenance purposes you may want access the containers shell. 
 
 ```bash
-docker exec -it (whatever your container name is e.g. clamav) bash
+docker exec -it (whatever your container name is e.g. clamav-rest) /bin/sh
 ```
 
 # Developing
@@ -118,7 +151,7 @@ Build golang (linux) binary and docker image:
 ```bash
 # env GOOS=linux GOARCH=amd64 go build
 docker build . -t clamav-go-rest
-docker run -p 9000:9000 -itd --name clamav-rest clamav-go-rest
+docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest clamav-go-rest
 ```
 
 # References

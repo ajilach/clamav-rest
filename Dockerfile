@@ -17,16 +17,18 @@ RUN sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/clamd.conf \
     && sed -i 's/^#TCPSocket .*$/TCPSocket 3310/g' /etc/clamav/clamd.conf \
     && sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/freshclam.conf
 
-RUN freshclam --quiet --no-dns --checks=2
+RUN freshclam --quiet --no-dns
 
 # Build go package
 ADD . /go/src/clamav-rest/
+ADD ./server.* /etc/ssl/clamav-rest/
 RUN cd /go/src/clamav-rest && go build -v
 
 COPY entrypoint.sh /usr/bin/
 RUN mv /go/src/clamav-rest/clamav-rest /usr/bin/ && rm -Rf /go/src/clamav-rest
 
 EXPOSE 9000
+EXPOSE 9443
 
 ENV MAX_SCAN_SIZE=100M
 ENV MAX_FILE_SIZE=25M
@@ -41,5 +43,6 @@ ENV MAX_PARTITIONS=50
 ENV MAX_ICONSPE=100
 ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
+ENV SIGNATURE_CHECKS=24
 
 ENTRYPOINT [ "entrypoint.sh" ]

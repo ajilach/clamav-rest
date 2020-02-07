@@ -16,7 +16,7 @@ sed -i 's/^#MaxIconsPE .*$/MaxIconsPE '"$MAX_ICONSPE"'/g' /etc/clamav/clamd.conf
 sed -i 's/^#PCREMatchLimit.*$/PCREMatchLimit '"$PCRE_MATCHLIMIT"'/g' /etc/clamav/clamd.conf
 sed -i 's/^#PCRERecMatchLimit .*$/PCRERecMatchLimit '"$PCRE_RECMATCHLIMIT"'/g' /etc/clamav/clamd.conf
 
-freshclam -d &
+freshclam --daemon --checks=$SIGNATURE_CHECKS &
 clamd &
 /usr/bin/clamav-rest &
 
