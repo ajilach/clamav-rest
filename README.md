@@ -8,7 +8,7 @@
 - [Configuration](#configuration)
     - [Environment Variables](#environment-variables)
     - [Networking](#networking)  
-- [Maintenance / Monitoring](#maintenance-/-monitoring)
+- [Maintenance / Monitoring](#maintenance--monitoring)
     - [Shell Access](#shell-access)
 
 - [Developing](#developing)    
