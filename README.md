@@ -8,8 +8,9 @@
 - [Configuration](#configuration)
     - [Environment Variables](#environment-variables)
     - [Networking](#networking)  
-- [Maintenance](#maintenance)
+- [Maintenance / Monitoring](#maintenance-/-monitoring)
     - [Shell Access](#shell-access)
+
 - [Developing](#developing)    
 - [References](#references)
 
@@ -134,7 +135,7 @@ Below is the complete list of available options that can be used to customize yo
 |-----------|-------------|
 | `3310`    | ClamD Listening Port |
 
-# Maintenance
+# Maintenance / Monitoring
 
 ## Shell Access
 
@@ -143,6 +144,15 @@ For debugging and maintenance purposes you may want access the containers shell.
 ```bash
 docker exec -it (whatever your container name is e.g. clamav-rest) /bin/sh
 ```
+## Prometheus
+
+[Prometheus metrics](https://prometheus.io/docs/guides/go-application/) were implemented, which can be retrieved as follows
+
+**HTTP**:
+curl http://localhost:9000/metrics
+
+**HTTPS:**
+curl https://localhost:9443/metrics
 
 # Developing
 
