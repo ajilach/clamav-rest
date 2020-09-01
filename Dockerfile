@@ -3,6 +3,9 @@ FROM golang:alpine
 # Update
 RUN apk update upgrade;
 
+# Install git
+RUN apk add git
+
 # Set timezone to Europe/Zurich
 RUN apk add tzdata
 RUN ln -s /usr/share/zoneinfo/Europe/Zurich /etc/localtime
@@ -21,6 +24,7 @@ RUN freshclam --quiet --no-dns
 
 # Build go package
 ADD . /go/src/clamav-rest/
+RUN go get github.com/dutchcoders/go-clamd
 ADD ./server.* /etc/ssl/clamav-rest/
 RUN cd /go/src/clamav-rest && go build -v
 
