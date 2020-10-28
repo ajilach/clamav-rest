@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/dutchcoders/go-clamd"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var opts map[string]string
@@ -183,6 +184,9 @@ func main() {
 	http.HandleFunc("/scan", scanHandler)
 	http.HandleFunc("/scanPath", scanPathHandler)
 	http.HandleFunc("/", home)
+
+	// Prometheus metrics
+	http.Handle("/metrics", promhttp.Handler())
 
 	// Start the HTTPS server in a goroutine
 	go http.ListenAndServeTLS(SSL_PORT, "/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key", nil)
