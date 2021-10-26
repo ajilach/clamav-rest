@@ -27,7 +27,7 @@ ADD . /go/src/clamav-rest/
 RUN go get github.com/dutchcoders/go-clamd
 RUN go get github.com/prometheus/client_golang/prometheus/promhttp
 ADD ./server.* /etc/ssl/clamav-rest/
-RUN cd /go/src/clamav-rest && go build -v
+RUN cd /go/src/clamav-rest && go mod init && go mod vendor && go build -v
 
 COPY entrypoint.sh /usr/bin/
 RUN mv /go/src/clamav-rest/clamav-rest /usr/bin/ && rm -Rf /go/src/clamav-rest
@@ -48,6 +48,6 @@ ENV MAX_PARTITIONS=50
 ENV MAX_ICONSPE=100
 ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
-ENV SIGNATURE_CHECKS=24
+ENV SIGNATURE_CHECKS=2
 
 ENTRYPOINT [ "entrypoint.sh" ]
