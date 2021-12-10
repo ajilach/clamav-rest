@@ -24,7 +24,7 @@ WORKDIR $GOPATH
 CMD ["make"]
 
 # Install ClamAV
-RUN apk --no-cache add clamav=0.104.1-r0 clamav-libunrar=0.104.1-r0 \
+RUN apk --no-cache add clamav clamav-libunrar \
     && mkdir /run/clamav \
     && chown clamav:clamav /run/clamav
 
