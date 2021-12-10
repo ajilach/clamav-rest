@@ -1,4 +1,4 @@
-FROM golang:alpine
+FROM alpine:3.15
 
 # Update
 RUN apk update upgrade;
@@ -10,8 +10,21 @@ RUN apk add git
 RUN apk add tzdata
 RUN ln -s /usr/share/zoneinfo/Europe/Zurich /etc/localtime
 
+RUN apk add --no-cache git make musl-dev go
+
+# Configure Go
+ENV GOROOT /usr/lib/go
+ENV GOPATH /go
+ENV PATH /go/bin:$PATH
+
+RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
+
+WORKDIR $GOPATH
+
+CMD ["make"]
+
 # Install ClamAV
-RUN apk --no-cache add clamav clamav-libunrar \
+RUN apk --no-cache add clamav=0.104.1-r0 clamav-libunrar=0.104.1-r0 \
     && mkdir /run/clamav \
     && chown clamav:clamav /run/clamav
 
