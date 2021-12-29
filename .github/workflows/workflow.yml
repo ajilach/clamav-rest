@@ -22,7 +22,7 @@ jobs:
     - name: Login to DockerHub
       uses: docker/login-action@v1
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
+        username: ajilaag
         password: ${{ secrets.DOCKER_PASSWORD }}
     
     - name: Extract metadata (tags, labels) for Docker
