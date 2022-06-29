@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/dutchcoders/go-clamd"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -166,6 +168,13 @@ func main() {
 
 	opts = make(map[string]string)
 
+	// https://github.com/prometheus/client_golang/blob/main/examples/gocollector/main.go
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(collectors.NewBuildInfoCollector())
+	reg.MustRegister(collectors.NewGoCollector(
+		collectors.WithGoCollections(collectors.GoRuntimeMemStatsCollection | collectors.GoRuntimeMetricsCollection),
+	))
+
 	for _, e := range os.Environ() {
 		pair := strings.Split(e, "=")
 		opts[pair[0]] = pair[1]
@@ -186,7 +195,13 @@ func main() {
 	http.HandleFunc("/", home)
 
 	// Prometheus metrics
-	http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics", promhttp.HandlerFor(
+		reg,
+		promhttp.HandlerOpts{
+			// Opt into OpenMetrics to support exemplars.
+			EnableOpenMetrics: true,
+		},
+	))
 
 	// Start the HTTPS server in a goroutine
 	go http.ListenAndServeTLS(SSL_PORT, "/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key", nil)
