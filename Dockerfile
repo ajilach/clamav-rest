@@ -37,8 +37,7 @@ RUN freshclam --quiet --no-dns
 
 # Build go package
 ADD . /go/src/clamav-rest/
-RUN go import github.com/dutchcoders/go-clamd@latest
-RUN go install github.com/dutchcoders/go-clamd@latest
+RUN go install -x github.com/dutchcoders/go-clamd@latest
 RUN go install github.com/prometheus/client_golang/prometheus/promhttp@latest
 ADD ./server.* /etc/ssl/clamav-rest/
 RUN cd /go/src/clamav-rest && go mod init && go mod vendor && go build -v
