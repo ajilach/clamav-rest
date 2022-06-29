@@ -14,10 +14,10 @@ RUN apk add --no-cache git make musl-dev go
 
 # Configure Go
 ENV GOROOT /usr/lib/go
-ENV GOPATH /go
+ENV GOPATH /go/src
 ENV PATH /go/bin:$PATH
 
-RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
+RUN mkdir -p ${GOPATH} /go/bin
 
 WORKDIR $GOPATH
 
