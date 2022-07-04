@@ -23,20 +23,20 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Log in to the Azure Container Registry (dev)
+    - name: Log in to DockerHub
       uses: docker/login-action@v2
       with:
         username: ${{ env.REGISTRY_USER }}
         password: ${{ env.REGISTRY_PASSWORD }}
     
-    - name: Extract metadata (tags, labels) for Docker (dev)
+    - name: Extract metadata (tags, labels) for Docker
       id: meta_dev
       uses: docker/metadata-action@v4
       with:
         images: ajilaag/${{ env.IMAGE_NAME }}
         tags: type=raw,value={{date 'YYYYMMDD'}}
 
-    - name: Build and push to ACR (dev)
+    - name: Build and push to DockerHub
       id: container_metadata
       uses: docker/build-push-action@v3
       with:
@@ -44,9 +44,6 @@ jobs:
         push: true
         tags: ${{ steps.meta_dev.outputs.tags }}
         labels: ${{ steps.meta_dev.outputs.labels }}
-    
-    - name: print vars
-      run: echo "version ${{steps.meta_dev.outputs.version}}" && echo "tags ${{steps.meta_dev.outputs.tags}}" && echo "tags ${{steps.meta_dev.outputs.labels}}" && echo "tags ${{steps.meta_dev.outputs.bake-file}}"
 
   deploy:
     runs-on: ubuntu-latest
@@ -63,7 +60,7 @@ jobs:
           -X POST \
           -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
           -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/ajilach/ajila-cloud-kubernetes-${{ env.ENVIRONMENT }}/actions/workflows/update_version_dockerhub.yaml/dispatches \
+          https://api.github.com/repos/ajilach/ajila-cloud-kubernetes-${{ env.ENVIRONMENT }}/actions/workflows/29528836/dispatches \
           -d '{"ref":"master","inputs":{"application":"ajila-cloud-clamav","image_digest":"${{ needs.build.outputs.image_digest }}","image_tags":"${{ needs.build.outputs.image_tags }}"}}'
         
 
