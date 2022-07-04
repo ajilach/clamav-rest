@@ -50,7 +50,7 @@ jobs:
 
     deploy:
     runs-on: ubuntu-latest
-    needs: containerize
+    needs: build
 
     env:
       ENVIRONMENT: dev
