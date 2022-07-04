@@ -27,6 +27,13 @@ jobs:
       ENVIRONMENT: test
 
     steps:
+      - uses: chrnorm/deployment-action@v2
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: "${{ github.token }}"
+          environment: TEST
+
       - name: Trigger the update workflow TEST
         # get workflow id with `gh workflow list --repo user/repo`
         run: |
@@ -37,6 +44,21 @@ jobs:
           https://api.github.com/repos/ajilach/ajila-cloud-kubernetes-${{ env.ENVIRONMENT }}/actions/workflows/update_version_dockerhub.yaml/dispatches \
           -d '{"ref":"master","inputs":{"application":"ajila-cloud-clamav","image_digest":"${{ needs.build.outputs.image_digest }}","image_tags":"ajilaag/clamav-rest:${{github.event.inputs.version}}"}}'
         
+      - name: Update deployment status (success)
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: '${{ github.token }}'
+          state: 'success'
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+
+      - name: Update deployment status (failure)
+        if: failure()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: '${{ github.token }}'
+          state: 'failure'
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
 
   slack-workflow-status:
     permissions: read-all
