@@ -45,9 +45,6 @@ jobs:
         tags: ${{ steps.meta_dev.outputs.tags }}
         labels: ${{ steps.meta_dev.outputs.labels }}
 
-    - name: print container_metadata_imageid
-      run: echo "${{steps.container_metadata.outputs.imageid}}"
-
   deploy:
     runs-on: ubuntu-latest
     needs: build
