@@ -30,6 +30,9 @@ Automated builds of the image are available on [Registry](https://hub.docker.com
 docker pull hub.docker.com/ajilaag/clamav-rest:(imagetag)
 ```
 
+The following image tags are available:
+* `latest` - Most recent release of ClamAV with REST API
+
 # Quick Start
 
 Run clamav-rest docker image:
@@ -153,6 +156,8 @@ curl https://localhost:9443/metrics
 
 # Developing
 
+Source Code can be found here: https://github.com/ajilach/clamav-rest
+
 Build golang (linux) binary and docker image:
 
 ```bash
@@ -164,3 +169,4 @@ docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest clamav-go-rest
 # References
 
 * https://www.clamav.net
+* https://github.com/ajilach/clamav-rest

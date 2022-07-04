@@ -1,4 +1,4 @@
-name: Build, Push Container image to DockerHub and deploy to DEV
+name: Build, Push Container image to DockerHub
 
 on:
   push:
@@ -34,7 +34,10 @@ jobs:
       uses: docker/metadata-action@v4
       with:
         images: ajilaag/${{ env.IMAGE_NAME }}
-        tags: type=raw,value={{date 'YYYYMMDD'}}
+        tags: |
+          type=raw,value={{date 'YYYYMMDD'}}
+          Type=raw,value=latest,enable={{is_default_branch}}
+
 
     - name: Build and push to DockerHub
       id: container_metadata
