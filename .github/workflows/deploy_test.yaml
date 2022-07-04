@@ -1,0 +1,55 @@
+name: Deploy to TEST
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'version tag'
+        required: true
+        type: string
+      image_digest:
+        description: 'optional digest hash'
+        required: false
+        type: string
+
+env:
+  IMAGE_NAME: "clamav-rest"
+
+  REGISTRY_USER: ajilaag
+  REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+jobs: 
+  
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    env:
+      ENVIRONMENT: test
+
+    steps:
+      - name: Trigger the update workflow TEST
+        # get workflow id with `gh workflow list --repo user/repo`
+        run: |
+          curl \
+          -X POST \
+          -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/ajilach/ajila-cloud-kubernetes-${{ env.ENVIRONMENT }}/actions/workflows/update_version_dockerhub.yaml/dispatches \
+          -d '{"ref":"master","inputs":{"application":"ajila-cloud-clamav","image_digest":"${{ needs.build.outputs.image_digest }}","image_tags":"docker.io/ajilaag/clamav-rest:${{github.event.inputs.version}}"}}'
+        
+
+  slack-workflow-status:
+    permissions: read-all
+    if: always()
+    name: Post Workflow Status To Slack
+    needs:
+      - deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Workflow Notification
+        uses: Gamesight/slack-workflow-status@v1.1.0
+        with:
+          # Required Input
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          slack_webhook_url: ${{secrets.SLACK_WEBHOOK}}
