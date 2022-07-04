@@ -30,9 +30,6 @@ Automated builds of the image are available on [Registry](https://hub.docker.com
 docker pull hub.docker.com/ajilaag/clamav-rest:(imagetag)
 ```
 
-The following image tags are available:
-* `latest` - Most recent release of ClamAV with REST API
-
 # Quick Start
 
 Run clamav-rest docker image:
