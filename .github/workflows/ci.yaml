@@ -16,6 +16,9 @@ jobs:
 
     runs-on: ubuntu-latest
       
+    outputs:
+      image_digest: ${{ steps.container_metadata.outputs.digest }}
+      image_tag: ${{ steps.container_metadata.outputs.tags }}
 
     steps:
     - uses: actions/checkout@v3
@@ -42,54 +45,40 @@ jobs:
         tags: ${{ steps.meta_dev.outputs.tags }}
         labels: ${{ steps.meta_dev.outputs.labels }}
     
-    # - name: Build the Docker image
-    #   run: docker build . --file Dockerfile -t ajilaag/clamav-rest:$(date +'%Y%m%d')
-    
-    # - name: Login to DockerHub
-    #   uses: docker/login-action@v2
-    #   with:
-    #     username: ajilaag
-    #     password: ${{ secrets.DOCKER_PASSWORD }}
-    # - name: Push to DockerHub
-    #   run: docker push ajilaag/clamav-rest:$(date +'%Y%m%d')
     - name: print vars
       run: echo "version ${{steps.meta_dev.outputs.version}}" && echo "tags ${{steps.meta_dev.outputs.tags}}" && echo "tags ${{steps.meta_dev.outputs.labels}}" && echo "tags ${{steps.meta_dev.outputs.bake-file}}"
 
+    deploy:
+    runs-on: ubuntu-latest
+    needs: containerize
 
+    env:
+      ENVIRONMENT: dev
 
-
-
-    # deploy:
-    # runs-on: ubuntu-latest
-    # needs: containerize
-
-    # env:
-    #   ENVIRONMENT: dev
-
-    # steps:
-    #   - name: Trigger the update workflow DEV
-    #     # get workflow id with `gh workflow list --repo user/repo`
-    #     run: |
-    #       curl \
-    #       -X POST \
-    #       -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
-    #       -H "Accept: application/vnd.github.v3+json" \
-    #       https://api.github.com/repos/ajilach/ajila-cloud-kubernetes-${{ env.ENVIRONMENT }}/actions/workflows/27191493/dispatches \
-    #       -d '{"ref":"master","inputs":{"application":"${{ needs.containerize.outputs.artefact_id }}","image_digest":"${{ needs.containerize.outputs.image_digest }}","image_version":"${{ needs.containerize.outputs.build_version }}"}}'
+    steps:
+      - name: Trigger the update workflow DEV
+        # get workflow id with `gh workflow list --repo user/repo`
+        run: |
+          curl \
+          -X POST \
+          -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/ajilach/ajila-cloud-kubernetes-${{ env.ENVIRONMENT }}/actions/workflows/update_version_dockerhub.yaml/dispatches \
+          -d '{"ref":"master","inputs":{"application":"ajila-cloud-clamav","image_digest":"${{ needs.build.outputs.image_digest }}","image_tags":"${{ needs.build.outputs.image_tags }}"}}'
         
 
-    # slack-workflow-status:
-    # permissions: read-all
-    # if: always()
-    # name: Post Workflow Status To Slack
-    # needs:
-    #   - build
-    #   - deploy
-    # runs-on: ubuntu-latest
-    # steps:
-    #   - name: Slack Workflow Notification
-    #     uses: Gamesight/slack-workflow-status@v1.1.0
-    #     with:
-    #       # Required Input
-    #       repo_token: ${{secrets.GITHUB_TOKEN}}
-    #       slack_webhook_url: ${{secrets.SLACK_WEBHOOK}}
+    slack-workflow-status:
+    permissions: read-all
+    if: always()
+    name: Post Workflow Status To Slack
+    needs:
+      - build
+      - deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Workflow Notification
+        uses: Gamesight/slack-workflow-status@v1.1.0
+        with:
+          # Required Input
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          slack_webhook_url: ${{secrets.SLACK_WEBHOOK}}
