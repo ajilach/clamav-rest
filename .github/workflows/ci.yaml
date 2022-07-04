@@ -48,7 +48,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-
+    permissions: 
+      deployments: write
+      statuses: write
+      contents: read
     env:
       ENVIRONMENT: dev
 

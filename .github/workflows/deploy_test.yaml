@@ -22,7 +22,10 @@ jobs:
   
   deploy:
     runs-on: ubuntu-latest
-
+    permissions: 
+      deployments: write
+      statuses: write
+      contents: read
     env:
       ENVIRONMENT: test
 
