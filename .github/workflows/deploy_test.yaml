@@ -35,7 +35,7 @@ jobs:
           -H "Authorization: token ${{ secrets.ACCESS_TOKEN }}" \
           -H "Accept: application/vnd.github.v3+json" \
           https://api.github.com/repos/ajilach/ajila-cloud-kubernetes-${{ env.ENVIRONMENT }}/actions/workflows/update_version_dockerhub.yaml/dispatches \
-          -d '{"ref":"master","inputs":{"application":"ajila-cloud-clamav","image_digest":"${{ needs.build.outputs.image_digest }}","image_tags":"docker.io/ajilaag/clamav-rest:${{github.event.inputs.version}}"}}'
+          -d '{"ref":"master","inputs":{"application":"ajila-cloud-clamav","image_digest":"${{ needs.build.outputs.image_digest }}","image_tags":"ajilaag/clamav-rest:${{github.event.inputs.version}}"}}'
         
 
   slack-workflow-status:
