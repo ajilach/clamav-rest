@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clamav-rest-service
+  namespace: clamav-rest
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: clamav-rest-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 20
+  template:
+    metadata:
+      labels:
+        app: clamav-rest-service
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: clamav-rest-service
+        image: docker.io/ajilaag/clamav-rest:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9443        
+        env:
+        - name: MAX_FILE_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: clamav-rest-service-config
+              key: MAX_FILE_SIZE  
+        resources:
+          requests:
+            cpu: 100m
+            memory: 2000Mi
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /
+            port: 9443
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          failureThreshold: 10
+        livenessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /
+            port: 9443
+          initialDelaySeconds: 30
+          periodSeconds: 60
+      tolerations:
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 30
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 30          

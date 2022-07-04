@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clamav-rest-service
+  namespace: clamav-rest
+spec:
+  ports:
+  - port: 443
+    targetPort: 9443
+  selector:
+    app: clamav-rest-service
