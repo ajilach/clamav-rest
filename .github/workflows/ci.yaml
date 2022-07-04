@@ -29,20 +29,20 @@ jobs:
         password: ${{ env.REGISTRY_PASSWORD }}
     
     - name: Extract metadata (tags, labels) for Docker (dev)
-        id: meta_dev
-        uses: docker/metadata-action@v4
-        with:
-          images: ajilaag/${{ env.IMAGE_NAME }}
-          tags: type=raw,value=$(date +'%Y%m%d')
+      id: meta_dev
+      uses: docker/metadata-action@v4
+      with:
+        images: ajilaag/${{ env.IMAGE_NAME }}
+        tags: type=raw,value=$(date +'%Y%m%d')
 
     - name: Build and push to ACR (dev)
-        id: container_metadata
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta_dev.outputs.tags }}
-          labels: ${{ steps.meta_dev.outputs.labels }}
+      id: container_metadata
+      uses: docker/build-push-action@v3
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta_dev.outputs.tags }}
+        labels: ${{ steps.meta_dev.outputs.labels }}
     
     # - name: Build the Docker image
     #   run: docker build . --file Dockerfile -t ajilaag/clamav-rest:$(date +'%Y%m%d')
