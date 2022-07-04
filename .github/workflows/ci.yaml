@@ -31,7 +31,7 @@ jobs:
       uses: docker/metadata-action@v4
       with:
         images: ajilaag/${{ env.IMAGE_NAME }}
-        tags: type=raw,pattern={{date 'YYYYMMDD'}}
+        tags: type=raw,value={{date 'YYYYMMDD'}}
 
     - name: Build and push to ACR (dev)
       id: container_metadata
