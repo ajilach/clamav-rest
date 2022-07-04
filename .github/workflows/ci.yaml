@@ -48,7 +48,7 @@ jobs:
     - name: print vars
       run: echo "version ${{steps.meta_dev.outputs.version}}" && echo "tags ${{steps.meta_dev.outputs.tags}}" && echo "tags ${{steps.meta_dev.outputs.labels}}" && echo "tags ${{steps.meta_dev.outputs.bake-file}}"
 
-    deploy:
+  deploy:
     runs-on: ubuntu-latest
     needs: build
 
@@ -67,7 +67,7 @@ jobs:
           -d '{"ref":"master","inputs":{"application":"ajila-cloud-clamav","image_digest":"${{ needs.build.outputs.image_digest }}","image_tags":"${{ needs.build.outputs.image_tags }}"}}'
         
 
-    slack-workflow-status:
+  slack-workflow-status:
     permissions: read-all
     if: always()
     name: Post Workflow Status To Slack
