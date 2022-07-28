@@ -52,4 +52,4 @@ jobs:
       uses: laputansoft/github-tag-action@v4.6
       with:
         github_token: ${{ env.github-token }}
-        tag: ${{date 'YYYYMMDD'}}
+        tag: ${{ steps.meta_dev.outputs.tags }}
