@@ -10,6 +10,9 @@ env:
   REGISTRY_USER: ajilaag
   REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
+permissions:
+  contents: write
+
 jobs:
 
   build:
