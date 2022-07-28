@@ -47,3 +47,9 @@ jobs:
         push: true
         tags: ${{ steps.meta_dev.outputs.tags }}
         labels: ${{ steps.meta_dev.outputs.labels }}
+    
+    - name: Add version tag
+        uses: laputansoft/github-tag-action@v4.6
+        with:
+          github_token: ${{ env.github-token }}
+          tag: ${{date 'YYYYMMDD'}}
