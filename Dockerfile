@@ -1,16 +1,7 @@
-FROM alpine:3.16
+FROM alpine:3.16 as build
 
-# Update
-RUN apk update upgrade;
-
-# Install git
-RUN apk add git
-
-# Set timezone to Europe/Zurich
-RUN apk add tzdata
-RUN ln -s /usr/share/zoneinfo/Europe/Zurich /etc/localtime
-
-RUN apk add --no-cache git make musl-dev go
+# Update & Install Go
+RUN apk update upgrade && apk add --no-cache go
 
 # Configure Go
 ENV GOROOT /usr/lib/go
@@ -21,7 +12,21 @@ RUN mkdir -p ${GOPATH} /go/bin
 
 WORKDIR $GOPATH
 
-CMD ["make"]
+# Build go package
+ADD . /go/src/clamav-rest/
+ADD ./server.* /etc/ssl/clamav-rest/
+RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
+
+FROM alpine:3.16
+
+# Copy compiled clamav-rest binary from build container to production container
+COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
+
+# Update & Install tzdata
+RUN  apk update upgrade && apk add tzdata
+
+#Set timezone to Europe/Zurich
+RUN ln -s /usr/share/zoneinfo/Europe/Zurich /etc/localtime
 
 # Install ClamAV
 RUN apk --no-cache add clamav clamav-libunrar \
@@ -35,13 +40,7 @@ RUN sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/clamd.conf \
 
 RUN freshclam --quiet --no-dns
 
-# Build go package
-ADD . /go/src/clamav-rest/
-ADD ./server.* /etc/ssl/clamav-rest/
-RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
-
 COPY entrypoint.sh /usr/bin/
-RUN mv /go/src/clamav-rest/clamav-rest /usr/bin/ && rm -Rf /go/src/clamav-rest
 
 EXPOSE 9000
 EXPOSE 9443
