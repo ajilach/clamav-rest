@@ -50,9 +50,12 @@ jobs:
         push: true
         tags: ${{ steps.meta_dev.outputs.tags }}
         labels: ${{ steps.meta_dev.outputs.labels }}
+    - name: set NOW
+      run: |
+        echo "::set-env name=NOW::$(date +'YYYYMMDD')"
     
     - name: Add version tag
       uses: laputansoft/github-tag-action@v4.6
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: ${{ steps.meta_dev.outputs.tags }}
+        tag: ${{ env.NOW }}
