@@ -50,12 +50,17 @@ jobs:
         push: true
         tags: ${{ steps.meta_dev.outputs.tags }}
         labels: ${{ steps.meta_dev.outputs.labels }}
-    - name: set NOW
-      run: |
-        echo "::set-env name=NOW::$(date +'YYYYMMDD')"
     
     - name: Add version tag
+      id: tag_version
       uses: laputansoft/github-tag-action@v4.6
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: ${{ env.NOW }}
+        tag: type=raw,value={{date 'YYYYMMDD'}}
+
+    - name: Create a GitHub release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ steps.tag_version.outputs.new_tag }}
+        name: Release ${{ steps.tag_version.outputs.new_tag }}
+        body: ${{ steps.tag_version.outputs.changelog }}
