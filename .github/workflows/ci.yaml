@@ -41,7 +41,6 @@ jobs:
           type=raw,value={{date 'YYYYMMDD'}}
           Type=raw,value=latest,enable={{is_default_branch}}
 
-
     - name: Build and push to DockerHub
       id: container_metadata
       uses: docker/build-push-action@v3
@@ -51,12 +50,16 @@ jobs:
         tags: ${{ steps.meta_dev.outputs.tags }}
         labels: ${{ steps.meta_dev.outputs.labels }}
     
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y%m%d')"
+
     - name: Add version tag
       id: tag_version
       uses: laputansoft/github-tag-action@v4.6
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: type=raw,value={{date 'YYYYMMDD'}}
+        tag: ${{ steps.date.outputs.date }}
 
     - name: Create a GitHub release
       uses: ncipollo/release-action@v1
