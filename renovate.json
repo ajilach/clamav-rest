@@ -5,8 +5,5 @@
   ],
   "golang": {
     "fileMatch": ["\.go$"]
-  },
-  "docker": {
-    "fileMatch": ["Dockerfile"]
   }
 }
