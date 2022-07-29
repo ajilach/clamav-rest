@@ -14,7 +14,6 @@ WORKDIR $GOPATH
 
 # Build go package
 ADD . /go/src/clamav-rest/
-ADD ./server.* /etc/ssl/clamav-rest/
 RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
 
 FROM alpine:3.16
@@ -27,6 +26,8 @@ RUN  apk update upgrade && apk add tzdata
 
 #Set timezone to Europe/Zurich
 RUN ln -s /usr/share/zoneinfo/Europe/Zurich /etc/localtime
+
+ADD ./server.* /etc/ssl/clamav-rest/
 
 # Install ClamAV
 RUN apk --no-cache add clamav clamav-libunrar \
