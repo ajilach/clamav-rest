@@ -115,7 +115,7 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 			response, err := c.ScanStream(part, abort)
 			for s := range response {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				respJson := fmt.Sprintf("{ Status: \"%s\", Description: \"%s\" }", s.Status, s.Description)
+				respJson := fmt.Sprintf("{ \"Status\": \"%s\", \"Description\": \"%s\" }", s.Status, s.Description)
 				switch s.Status {
 				case clamd.RES_OK:
 					w.WriteHeader(http.StatusOK)
