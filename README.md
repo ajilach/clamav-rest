@@ -127,7 +127,7 @@ Below is the complete list of available options that can be used to customize yo
 | `MAX_ICONSPE` | How many Icons in PE to scan - Default `100` |
 | `PCRE_MATCHLIMIT` | Maximum PCRE Match Calls - Default `100000` |
 | `PCRE_RECMATCHLIMIT` | Maximum Recursive Match Calls to PCRE - Default `2000` |
-| `SIGNATURE_CHECKS` | Check times per day for a new database signature. Must be between 1 and 50. - Default `24` |
+| `SIGNATURE_CHECKS` | Check times per day for a new database signature. Must be between 1 and 50. - Default `2` |
 
 ## Networking
 
