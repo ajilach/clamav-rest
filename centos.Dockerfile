@@ -1,26 +1,37 @@
-FROM centos
+FROM quay.io/centos/centos:stream8 as build
 
-RUN yum -y update && yum clean all
+# Set timezone to Europe/Zurich
+ENV TZ=Europe/Zurich
 
 # Install golang
-RUN mkdir -p /go && chmod -R 777 /go && \
-    yum install -y centos-release-scl epel-release && \
-    yum -y install golang nano && yum clean all
+RUN mkdir -p /go && chmod -R 777 /go \
+    && dnf -y update \
+    && dnf -y group install "Development Tools" \
+    && dnf install -y epel-release \
+    && dnf -y install golang \
+    && dnf clean all
 
 ENV GOPATH=/go \
     PATH="$GOPATH/bin:/usr/local/go/bin:$PATH"
 
+# Build go package
+ADD . /go/src/clamav-rest/
+RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
+
+FROM quay.io/centos/centos:stream8
+
+# Copy compiled clamav-rest binary from build container to production container
+COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
+
 # Install ClamAV
-RUN yum install -y clamav-server clamav-data clamav-update clamav-filesystem clamav clamav-scanner-systemd clamav-devel clamav-lib clamav-server-systemd \
+RUN dnf -y update \
+    && dnf install -y epel-release \
+    && dnf install -y clamav-server clamav-data clamav-update clamav-filesystem clamav clamav-scanner-systemd clamav-devel clamav-lib clamav-server-systemd \
     && mkdir /run/clamav \
-    && chown clamscan:clamscan /run/clamav
-
+    && chown clamscan:clamscan /run/clamav \
 # Clean
-RUN yum clean -y all --enablerepo='*' && \
-    rm -Rf /tmp/*
-
-# Set timezone to Europe/Zurich
-RUN ln -s /usr/share/zoneinfo/Europe/Zurich /etc/localtime
+    && dnf clean -y all --enablerepo='*' \
+    && rm -Rf /tmp/*
 
 # Configure clamAV to run in foreground with port 3310
 RUN sed -i 's/^Example$/# Example/g' /etc/clamd.d/scan.conf \
@@ -30,13 +41,10 @@ RUN sed -i 's/^Example$/# Example/g' /etc/clamd.d/scan.conf \
 
 RUN freshclam --quiet --no-dns
 
-# Build go package
-ADD . /go/src/clamav-rest/
 ADD ./server.* /etc/ssl/clamav-rest/
-RUN cd /go/src/clamav-rest/ && go build -v
 
 COPY entrypoint.sh /usr/bin/
-RUN mv /go/src/clamav-rest/clamav-rest /usr/bin/ && rm -Rf /go/src/clamav-rest
+RUN mkdir /etc/clamav/ && ln -s /etc/clamd.d/scan.conf /etc/clamav/clamd.conf
 
 EXPOSE 9000
 EXPOSE 9443

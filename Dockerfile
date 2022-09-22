@@ -22,10 +22,10 @@ FROM alpine:3.16
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
 
 # Update & Install tzdata
-RUN  apk update upgrade && apk add tzdata
+RUN  apk update upgrade && apk add --no-cache tzdata
 
-#Set timezone to Europe/Zurich
-RUN ln -s /usr/share/zoneinfo/Europe/Zurich /etc/localtime
+# Set timezone to Europe/Zurich
+ENV TZ=Europe/Zurich
 
 ADD ./server.* /etc/ssl/clamav-rest/
 
