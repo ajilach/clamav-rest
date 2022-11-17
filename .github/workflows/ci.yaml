@@ -2,6 +2,8 @@ name: Build, Push Container image to DockerHub
 
 on:
   push:
+    branches:
+      - master
   workflow_dispatch:
 
 env:
