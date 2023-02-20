@@ -138,6 +138,38 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	c := clamd.NewClamd(opts["CLAMD_PORT"])
+
+	fmt.Printf(time.Now().Format(time.RFC3339) + " Started scanning plain body\n")
+	var abort chan bool
+	defer r.Body.Close()
+	response, _ := c.ScanStream(r.Body, abort)
+	for s := range response {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		respJson := fmt.Sprintf("{ Status: %q, Description: %q }", s.Status, s.Description)
+		switch s.Status {
+		case clamd.RES_OK:
+			w.WriteHeader(http.StatusOK)
+		case clamd.RES_FOUND:
+			w.WriteHeader(http.StatusNotAcceptable)
+		case clamd.RES_ERROR:
+			w.WriteHeader(http.StatusBadRequest)
+		case clamd.RES_PARSE_ERROR:
+			w.WriteHeader(http.StatusPreconditionFailed)
+		default:
+			w.WriteHeader(http.StatusNotImplemented)
+		}
+		fmt.Fprint(w, respJson)
+		fmt.Printf(time.Now().Format(time.RFC3339)+" Scan result for plain body: %v\n", s)
+	}
+}
+
 func waitForClamD(port string, times int) {
 	clamdTest := clamd.NewClamd(port)
 	clamdTest.Ping()
