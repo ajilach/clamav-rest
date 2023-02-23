@@ -193,11 +193,6 @@ func waitForClamD(port string, times int) {
 
 func main() {
 
-	const (
-		PORT     = ":9000"
-		SSL_PORT = ":9443"
-	)
-
 	opts = make(map[string]string)
 
 	// https://github.com/prometheus/client_golang/blob/main/examples/gocollector/main.go
@@ -236,8 +231,8 @@ func main() {
 	))
 
 	// Start the HTTPS server in a goroutine
-	go http.ListenAndServeTLS(SSL_PORT, "/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key", nil)
+	go http.ListenAndServeTLS(fmt.Sprintf(":%s", opts["SSL_PORT"]), "/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key", nil)
 
 	// Start the HTTP server
-	http.ListenAndServe(PORT, nil)
+	http.ListenAndServe(fmt.Sprintf(":%s", opts["PORT"]), nil)
 }
