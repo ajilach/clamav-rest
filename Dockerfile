@@ -43,8 +43,8 @@ RUN freshclam --quiet --no-dns
 
 COPY entrypoint.sh /usr/bin/
 
-EXPOSE 9000
-EXPOSE 9443
+ENV PORT=9000
+ENV SSL_PORT=9443
 
 ENV MAX_SCAN_SIZE=100M
 ENV MAX_FILE_SIZE=25M
