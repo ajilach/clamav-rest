@@ -1,16 +1,10 @@
-FROM alpine:3.17 as build
+FROM golang:alpine3.17 as build
 
-# Update & Install Go
-RUN apk update upgrade && apk add --no-cache go
+# Update libraries
+RUN apk update upgrade 
 
-# Configure Go
-ENV GOROOT /usr/lib/go
-ENV GOPATH /go/src
-ENV PATH /go/bin:$PATH
-
-RUN mkdir -p ${GOPATH} /go/bin
-
-WORKDIR $GOPATH
+# Set workdir
+WORKDIR /go/src
 
 # Build go package
 ADD . /go/src/clamav-rest/
