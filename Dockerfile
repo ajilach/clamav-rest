@@ -18,6 +18,11 @@ COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
 # Update & Install tzdata
 RUN  apk update upgrade && apk add --no-cache tzdata
 
+# Enable Bash & logrotate
+RUN apk add bash logrotate
+
+COPY clamavlogrotate /etc/logrotate.d/clamav
+
 # Set timezone to Europe/Zurich
 ENV TZ=Europe/Zurich
 
@@ -41,7 +46,7 @@ ENV PORT=9000
 ENV SSL_PORT=9443
 
 ENV MAX_SCAN_SIZE=100M
-ENV MAX_FILE_SIZE=25M
+ENV MAX_FILE_SIZE=100M
 ENV MAX_RECURSION=16
 ENV MAX_FILES=10000
 ENV MAX_EMBEDDEDPE=10M

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Replace values with environment variables in clamd.conf
 sed -i 's/^#MaxScanSize .*$/MaxScanSize '"$MAX_SCAN_SIZE"'/g' /etc/clamav/clamd.conf
@@ -15,10 +15,12 @@ sed -i 's/^#MaxPartitions .*$/MaxPartitions '"$MAX_PARTITIONS"'/g' /etc/clamav/c
 sed -i 's/^#MaxIconsPE .*$/MaxIconsPE '"$MAX_ICONSPE"'/g' /etc/clamav/clamd.conf
 sed -i 's/^#PCREMatchLimit.*$/PCREMatchLimit '"$PCRE_MATCHLIMIT"'/g' /etc/clamav/clamd.conf
 sed -i 's/^#PCRERecMatchLimit .*$/PCRERecMatchLimit '"$PCRE_RECMATCHLIMIT"'/g' /etc/clamav/clamd.conf
+(
+    freshclam --daemon --checks=$SIGNATURE_CHECKS &
+    clamd &
+    /usr/bin/clamav-rest &
+) 2>&1 | tee -a /var/log/clamav/clamav.log
 
-freshclam --daemon --checks=$SIGNATURE_CHECKS &
-clamd &
-/usr/bin/clamav-rest &
 
 pids=`jobs -p`
 

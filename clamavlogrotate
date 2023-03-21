@@ -1,0 +1,5 @@
+/var/log/clamav/clamav.log {
+	missingok
+	copytruncate
+	daily
+}
