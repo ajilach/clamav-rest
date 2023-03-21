@@ -18,6 +18,11 @@ COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
 # Update & Install tzdata
 RUN  apk update upgrade && apk add --no-cache tzdata
 
+# Enable Bash & logrotate
+RUN apk add bash logrotate
+
+COPY clamavlogrotate /etc/logrotate.d/clamav
+
 # Set timezone to Europe/Zurich
 ENV TZ=Europe/Zurich
 
