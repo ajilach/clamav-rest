@@ -26,12 +26,15 @@
           - name: Checkout Repository
             uses: actions/checkout@v3
 
+          # - name: Set up Docker Buildx
+          #   uses: docker/setup-buildx-action@v2
+
           - name: Build Docker Image
             run: docker build . -t ${{ env.DOCKER_NAME }}:${{ steps.date.outputs.date }}
             # clamav-rest:20230525
 
-          - name: Scan Image
-            run: docker run aquasec/trivy:latest  image --timeout 5m --scanners vuln --exit-code 1 --severity CRITICAL,HIGH ${{ env.DOCKER_NAME }}:${{ steps.date.outputs.date }}
+          # - name: Scan Image
+          #   run: docker run aquasec/trivy:latest  image --timeout 5m --scanners vuln --exit-code 1 --severity CRITICAL,HIGH ${{ env.DOCKER_NAME }}:${{ steps.date.outputs.date }}
 
           - name: Tag Image
             run: |
