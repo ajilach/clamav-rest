@@ -46,5 +46,5 @@
           - name: Upload Artifact
             uses: ishworkh/docker-image-artifact-upload@v1
             with:
-              image: "${{ env.IMAGE }}:${{ steps.date.outputs.date }}"
+              image: "${{ env.DOCKER_NAME }}:${{ steps.date.outputs.date }}"
               retention_days: "8"
