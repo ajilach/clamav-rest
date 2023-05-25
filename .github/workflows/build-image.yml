@@ -8,7 +8,7 @@
     env:
       DOCKER_NAME: clamav-rest
       IMAGE: clamav
-      GH_REPO: gsa-tts/fac
+      GH_REPO: asteel-gsa/clamav-rest
 
     jobs:
       build-clamav:
