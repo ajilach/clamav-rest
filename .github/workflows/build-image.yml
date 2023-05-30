@@ -7,7 +7,7 @@ on:
 env:
   DOCKER_NAME: clamav-rest
   IMAGE: clamav
-  GH_REPO: gsa-tts/fac
+  GH_REPO: GSA-TTS/clamav-rest
 
 jobs:
   build-clamav:
@@ -41,9 +41,3 @@ jobs:
 
       - name: Push Image
         run: docker push --all-tags ghcr.io/${{ env.GH_REPO }}/${{ env.IMAGE }}
-
-      - name: Upload Artifact
-        uses: ishworkh/docker-image-artifact-upload@v1
-        with:
-          image: "${{ env.DOCKER_NAME }}:${{ steps.date.outputs.date }}"
-          retention_days: "8"
