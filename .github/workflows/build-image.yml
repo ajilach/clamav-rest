@@ -31,6 +31,7 @@ jobs:
       - name: Tag Image
         run: |
           docker tag ${{ env.DOCKER_NAME }}:${{ steps.date.outputs.date }} ghcr.io/${{ env.GH_REPO }}/${{ env.IMAGE }}:${{ steps.date.outputs.date }}
+          docker tag ${{ env.DOCKER_NAME }}:${{ steps.date.outputs.date }} ghcr.io/${{ env.GH_REPO }}/${{ env.IMAGE }}:latest
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
