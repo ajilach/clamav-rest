@@ -215,7 +215,7 @@ func waitForClamD(port string, times int) {
 			os.Exit(1)
 		}
 	} else {
-	  	for version_string := range version {
+		for version_string := range version {
 			fmt.Printf("Clamd version: %#v\n", version_string.Raw)
 		}
 	}
