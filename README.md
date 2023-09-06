@@ -7,11 +7,11 @@
     - [Status Codes](#status-codes)
 - [Configuration](#configuration)
     - [Environment Variables](#environment-variables)
-    - [Networking](#networking)  
+    - [Networking](#networking)
 - [Maintenance / Monitoring](#maintenance--monitoring)
     - [Shell Access](#shell-access)
 
-- [Developing](#developing)    
+- [Developing](#developing)
 - [References](#references)
 
 # Introduction
@@ -128,6 +128,10 @@ Below is the complete list of available options that can be used to customize yo
 | `PCRE_MATCHLIMIT` | Maximum PCRE Match Calls - Default `100000` |
 | `PCRE_RECMATCHLIMIT` | Maximum Recursive Match Calls to PCRE - Default `2000` |
 | `SIGNATURE_CHECKS` | Check times per day for a new database signature. Must be between 1 and 50. - Default `2` |
+| `PROXY_SERVER` | Specify a proxy for freshclam to utilize, if applicable, set in environment variables - Optional |
+| `PROXY_PORT` | The port for the proxy server, if applicable, set in environment variables - Optional |
+| `PROXY_USERNAME` | The username for the proxy server, if applicable, set in environment variables - Optional |
+| `PROXY_PASSWORD` | The password for the proxy server, if applicable, set in environment variables - Optional |
 
 ## Networking
 
@@ -139,7 +143,7 @@ Below is the complete list of available options that can be used to customize yo
 
 ## Shell Access
 
-For debugging and maintenance purposes you may want access the containers shell. 
+For debugging and maintenance purposes you may want access the containers shell.
 
 ```bash
 docker exec -it (whatever your container name is e.g. clamav-rest) /bin/sh
