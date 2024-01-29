@@ -1,7 +1,7 @@
 FROM golang:alpine3.18 as build
 
 # Update libraries
-RUN apk update upgrade 
+RUN apk update upgrade
 
 # Set workdir
 WORKDIR /go/src
@@ -20,6 +20,9 @@ RUN  apk update upgrade && apk add --no-cache tzdata
 
 # Enable Bash & logrotate
 RUN apk add bash logrotate
+
+# Update lobcrypto3
+RUN apk upgrade libssl3 libcrypto3
 
 COPY clamavlogrotate /etc/logrotate.d/clamav
 
