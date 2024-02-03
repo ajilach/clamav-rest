@@ -120,11 +120,8 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y%m%d')"
 
-
       - name: Add version tag
-        - name: Set up Docker Buildx
         id: tag_version
-          uses: docker/setup-buildx-action@v3
         uses: laputansoft/github-tag-action@v4.6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
