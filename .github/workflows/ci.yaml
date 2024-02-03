@@ -87,7 +87,7 @@ jobs:
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
-s
+
 
       # - name: Add version tag
       #   id: tag_version
