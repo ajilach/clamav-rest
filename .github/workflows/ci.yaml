@@ -46,6 +46,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=schedule,value={{date 'YYYYMMDD'}}
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -58,15 +61,6 @@ jobs:
         with:
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
- 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta_dev
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            type=raw,value={{date 'YYYYMMDD'}}
-            type=raw,value=latest,enable={{is_default_branch}}
 
       # - name: Build and push to DockerHub
       #   id: container_metadata
@@ -86,10 +80,7 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          # https://github.com/docker/metadata-action?tab=readme-ov-file#typeschedule
-          tags: |
-            type=schedule,pattern={{date 'YYYYMMDD'}}
-            type=raw,value=latest,enable={{is_default_branch}}
+          tags: ${{ steps.meta.outputs.tags }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
