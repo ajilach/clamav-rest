@@ -68,17 +68,29 @@ jobs:
             type=raw,value={{date 'YYYYMMDD'}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push to DockerHub
-        id: container_metadata
+      # - name: Build and push to DockerHub
+      #   id: container_metadata
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     platforms: ${{ matrix.platform }}
+      #     push: true
+      #     tags: ${{ steps.meta_dev.outputs.tags }}
+      #     labels: ${{ steps.meta_dev.outputs.labels }}
+      #     outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+      
+      - name: Build and push by digest
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: ${{ matrix.platform }}
-          push: true
-          tags: ${{ steps.meta_dev.outputs.tags }}
-          labels: ${{ steps.meta_dev.outputs.labels }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            type=raw,value={{date 'YYYYMMDD'}}
+            type=raw,value=latest,enable={{is_default_branch}}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
-      
+
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
