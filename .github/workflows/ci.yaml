@@ -11,7 +11,7 @@ on:
 env:
   REGISTRY_IMAGE: "${{ vars.DOCKER_USER }}/clamav-rest"
   REGISTRY_USER: ${{ vars.DOCKER_USER }}
-  REGISTRY_PASSWORD: "${{ secrets.DOCKER_PASSWORD }}
+  REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
 permissions:
   contents: write
