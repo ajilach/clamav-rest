@@ -49,7 +49,7 @@ jobs:
           # https://github.com/docker/metadata-action?tab=readme-ov-file#typeschedule
           tags: |
             type=schedule,value={{date 'YYYYMMDD'}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            # type=raw,value=latest,enable={{is_default_branch}}
             type=sha
 
       - name: Set up QEMU
