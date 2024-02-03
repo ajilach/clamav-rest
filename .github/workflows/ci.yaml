@@ -119,9 +119,9 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y%m%d')"
 
-      - name: Add version tag
+      - name: Add Github version tag 
         id: tag_version
-        uses: laputansoft/github-tag-action@v4.6
+        uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.date.outputs.date }}
