@@ -9,8 +9,8 @@ on:
     branches:
       - "main"
 env:
-  REGISTRY_IMAGE: "$DOCKER_USER_VAR/clamav-rest"
-  REGISTRY_USER: $DOCKER_USER_VAR
+  REGISTRY_IMAGE: "${{ env.DOCKER_USER_VAR }}/clamav-rest"
+  REGISTRY_USER: ${{ env.DOCKER_USER_VAR }}
   REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
 permissions:
