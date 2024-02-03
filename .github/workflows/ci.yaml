@@ -8,7 +8,7 @@ on:
 env:
   IMAGE_NAME: "clamav-rest"
 
-  REGISTRY_USER: ajilaag
+  REGISTRY_USER: ${{ secrets.DOCKER_USER }}
   REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
 permissions:
