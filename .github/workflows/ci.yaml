@@ -86,8 +86,9 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
+          # https://github.com/docker/metadata-action?tab=readme-ov-file#typeschedule
           tags: |
-            type=raw,value={{date 'YYYYMMDD'}}
+            type=schedule,pattern={{date 'YYYYMMDD'}}
             type=raw,value=latest,enable={{is_default_branch}}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
