@@ -46,9 +46,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
+          # https://github.com/docker/metadata-action?tab=readme-ov-file#typeschedule
           tags: |
             type=schedule,value={{date 'YYYYMMDD'}}
             type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -61,17 +63,6 @@ jobs:
         with:
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
-
-      # - name: Build and push to DockerHub
-      #   id: container_metadata
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: .
-      #     platforms: ${{ matrix.platform }}
-      #     push: true
-      #     tags: ${{ steps.meta_dev.outputs.tags }}
-      #     labels: ${{ steps.meta_dev.outputs.labels }}
-      #     outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
       
       - name: Build and push by digest
         id: build
@@ -96,17 +87,14 @@ jobs:
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
+s
 
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y%m%d')"
-
-      - name: Add version tag
-        id: tag_version
-        uses: laputansoft/github-tag-action@v4.6
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.date.outputs.date }}
+      # - name: Add version tag
+      #   id: tag_version
+      #   uses: laputansoft/github-tag-action@v4.6
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     tag: ${{ steps.date.outputs.date }}
 
       # - name: Create a GitHub release
       #   uses: ncipollo/release-action@v1
