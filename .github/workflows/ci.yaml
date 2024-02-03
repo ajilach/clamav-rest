@@ -1,9 +1,9 @@
 name: Build, Push Container image to DockerHub
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 6' # At 12:00 AM, only on Saturday
+# on:
+#   # workflow_dispatch:
+#   # schedule:
+#   #   - cron: '0 0 * * 6' # At 12:00 AM, only on Saturday
 
 env:
   IMAGE_NAME: "clamav-rest"
