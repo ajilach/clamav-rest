@@ -10,7 +10,7 @@ on:
       - "main"
 env:
   IMAGE_NAME: "clamav-rest"
-  REGISTRY_IMAGE: ${{ secrets.DOCKER_USER }}/${{ env.IMAGE_NAME }}
+  REGISTRY_IMAGE: "${{ secrets.DOCKER_USER }}/clamav-rest"
   REGISTRY_USER: ${{ secrets.DOCKER_USER }}
   REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
