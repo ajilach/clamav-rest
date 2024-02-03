@@ -7,7 +7,7 @@ name: Build, Push Container image to DockerHub
 
 env:
   IMAGE_NAME: "clamav-rest"
-
+  REGISTRY_IMAGE: ${{ secrets.DOCKER_USER }}/${{ env.IMAGE_NAME }}
   REGISTRY_USER: ${{ secrets.DOCKER_USER }}
   REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
@@ -32,7 +32,7 @@ jobs:
 
     steps:
     - name: Prepare
-      run: |
+    - run: |
         platform=${{ matrix.platform }}
         echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV  
     - name: Checkout
