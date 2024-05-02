@@ -4,6 +4,6 @@
     "config:base"
   ],
   "golang": {
-    "fileMatch": ["\.go$"]
+    "fileMatch": ["\\.go$"]
   }
 }
