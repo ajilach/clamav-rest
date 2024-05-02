@@ -18,6 +18,12 @@
 
 This is two in one docker image so it runs open source virus scanner ClamAV (https://www.clamav.net/), automatic virus definition updates as background process and REST API interface to interact with ClamAV process.
 
+# Updates
+
+As of May 2024, the releases are built for multiple architectures thanks to efforts from [kcirtapfromspace](https://github.com/kcirtapfromspace).
+
+The additional endpoint `/version` is now available to check the `clamd` version and signature date. Thanks [pastral](https://github.com/pastral).
+
 # Prerequisites
 
 This container doesn't do much on it's own unless you use an additional service or communicator to talk to it!
@@ -32,6 +38,8 @@ docker pull hub.docker.com/ajilaag/clamav-rest:(imagetag)
 
 The following image tags are available:
 * `latest` - Most recent release of ClamAV with REST API
+* `YYYYMMDD` - The day of the release
+* `sha-...` - The git commit sha. This version ensures that the exact image is used and will be unique for each build
 
 # Quick Start
 
@@ -96,8 +104,6 @@ Content-Length: 33
 
 { "Status": "OK", "Description": "" }
 ```
-
-
 
 ## Status Codes
 - 200 - clean file = no KNOWN infections
