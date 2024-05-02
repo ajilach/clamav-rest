@@ -250,7 +250,7 @@ func main() {
 	http.HandleFunc("/scan", scanHandler)
 	http.HandleFunc("/scanPath", scanPathHandler)
 	http.HandleFunc("/scanHandlerBody", scanHandlerBody)
-  http.HandleFunc("/version", clamversion)
+  	http.HandleFunc("/version", clamversion)
 	http.HandleFunc("/", home)
 
 	// Prometheus metrics
