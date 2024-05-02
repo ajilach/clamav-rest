@@ -23,6 +23,36 @@ func init() {
 	log.SetOutput(ioutil.Discard)
 }
 
+func clamversion(w http.ResponseWriter, r *http.Request) {
+	c := clamd.NewClamd(opts["CLAMD_PORT"])
+
+	version, err := c.Version()
+
+	if err != nil {
+		errJson, eErr := json.Marshal(err)
+		if eErr != nil {
+			fmt.Println(eErr)
+			return
+		}
+		fmt.Fprint(w, string(errJson))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	for version_string := range version {
+		if strings.HasPrefix(version_string.Raw, "ClamAV ") {
+			version_values := strings.Split(strings.Replace(version_string.Raw, "ClamAV ", "", 1),"/")
+			respJson := fmt.Sprintf("{ \"Clamav\": \"%s\" }", version_values[0])
+			if len(version_values) == 3 {
+				respJson = fmt.Sprintf("{ \"Clamav\": \"%s\", \"Signature\": \"%s\" , \"Signature_date\": \"%s\" }", version_values[0], version_values[1], version_values[2])
+			}
+			fmt.Fprint(w, string(respJson))
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}
+}
+
 func home(w http.ResponseWriter, r *http.Request) {
 	c := clamd.NewClamd(opts["CLAMD_PORT"])
 
@@ -220,6 +250,7 @@ func main() {
 	http.HandleFunc("/scan", scanHandler)
 	http.HandleFunc("/scanPath", scanPathHandler)
 	http.HandleFunc("/scanHandlerBody", scanHandlerBody)
+  http.HandleFunc("/version", clamversion)
 	http.HandleFunc("/", home)
 
 	// Prometheus metrics
