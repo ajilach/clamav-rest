@@ -24,6 +24,8 @@ As of May 2024, the releases are built for multiple architectures thanks to effo
 
 The additional endpoint `/version` is now available to check the `clamd` version and signature date. Thanks [pastral](https://github.com/pastral).
 
+Closed a security hole by upgrading our `Dockerfile` to the alpine base image version `3.19` thanks to [Marsup](https://github.com/Marsup).
+
 # Prerequisites
 
 This container doesn't do much on it's own unless you use an additional service or communicator to talk to it!
