@@ -1,4 +1,4 @@
-FROM golang:alpine3.19.1 as build
+FROM golang:alpine3.19 as build
 
 # Update libraries
 RUN apk update upgrade 
@@ -10,7 +10,7 @@ WORKDIR /go/src
 ADD . /go/src/clamav-rest/
 RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
 
-FROM alpine:3.19.1
+FROM alpine:3.19
 
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
