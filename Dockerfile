@@ -1,7 +1,7 @@
 FROM golang:alpine3.19 as build
 
 # Update libraries
-RUN apk update upgrade 
+RUN apk update && apk upgrade 
 
 # Set workdir
 WORKDIR /go/src
@@ -12,11 +12,14 @@ RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@la
 
 FROM alpine:3.19
 
+# Create a non-root user and group
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
 
 # Update & Install tzdata
-RUN  apk update upgrade && apk add --no-cache tzdata
+RUN apk update && apk upgrade && apk add --no-cache tzdata
 
 # Enable Bash & logrotate
 RUN apk add bash logrotate
@@ -44,7 +47,6 @@ COPY entrypoint.sh /usr/bin/
 
 ENV PORT=9000
 ENV SSL_PORT=9443
-
 ENV MAX_SCAN_SIZE=100M
 ENV MAX_FILE_SIZE=25M
 ENV MAX_RECURSION=16
@@ -59,5 +61,8 @@ ENV MAX_ICONSPE=100
 ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
 ENV SIGNATURE_CHECKS=2
+
+# Set the user as appuser to run the application
+USER appuser
 
 ENTRYPOINT [ "entrypoint.sh" ]
