@@ -3,16 +3,16 @@ services:
   clamav-rest:
     mem_reservation: "2G"
     mem_limit: "3G"
-    image: clamav-rest-test
+    image: ajilaag/clamav-rest
     ports:
       - "9000:9000"
       - "9443:9443"
     read_only: true
     user: 100:101
     volumes:
-    - clamav:/clamav:rw
-    - run-clamav:/run/clamav:rw
-    - var-log-clamav:/var/log/clamav:rw
+      - clamav:/clamav:rw
+      - run-clamav:/run/clamav:rw
+      - var-log-clamav:/var/log/clamav:rw
 volumes:
   clamav:
   run-clamav:
