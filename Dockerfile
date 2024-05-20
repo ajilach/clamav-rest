@@ -1,7 +1,7 @@
 FROM golang:alpine3.19 as build
 
 # Update libraries
-RUN apk update upgrade 
+RUN apk update && apk upgrade
 
 # Set workdir
 WORKDIR /go/src
@@ -16,7 +16,7 @@ FROM alpine:3.19
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
 
 # Update & Install tzdata
-RUN  apk update upgrade && apk add --no-cache tzdata
+RUN apk update && apk upgrade && apk add --no-cache tzdata
 
 # Enable Bash & logrotate
 RUN apk add bash logrotate
@@ -42,9 +42,13 @@ RUN freshclam --quiet --no-dns
 
 COPY entrypoint.sh /usr/bin/
 
+RUN mkdir /clamav \
+    && chown -R clamav.clamav /clamav \
+    && chown -R clamav.clamav /var/log/clamav \
+    && chown -R clamav.clamav /run/clamav
+
 ENV PORT=9000
 ENV SSL_PORT=9443
-
 ENV MAX_SCAN_SIZE=100M
 ENV MAX_FILE_SIZE=25M
 ENV MAX_RECURSION=16
@@ -59,5 +63,7 @@ ENV MAX_ICONSPE=100
 ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
 ENV SIGNATURE_CHECKS=2
+
+USER clamav
 
 ENTRYPOINT [ "entrypoint.sh" ]
