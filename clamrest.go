@@ -232,7 +232,7 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotImplemented)
 		}
 		fmt.Fprint(w, respJson)
-		fmt.Printf(time.Now().Format(time.RFC3339)+" Scan result for plain body: %v\n", s)
+		fmt.Printf("%v Scan result for plain body: %v\n", time.Now().Format(time.RFC3339), s)
 	}
 }
 
