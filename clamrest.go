@@ -45,7 +45,7 @@ func clamversion(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	for version_string := range version {
 		if strings.HasPrefix(version_string.Raw, "ClamAV ") {
-			version_values := strings.Split(strings.Replace(version_string.Raw, "ClamAV ", "", 1),"/")
+			version_values := strings.Split(strings.Replace(version_string.Raw, "ClamAV ", "", 1), "/")
 			respJson := fmt.Sprintf("{ \"Clamav\": \"%s\" }", version_values[0])
 			if len(version_values) == 3 {
 				respJson = fmt.Sprintf("{ \"Clamav\": \"%s\", \"Signature\": \"%s\" , \"Signature_date\": \"%s\" }", version_values[0], version_values[1], version_values[2])
