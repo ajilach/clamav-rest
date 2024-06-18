@@ -285,9 +285,10 @@ func main() {
 	fmt.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
 
 	http.HandleFunc("/scan", scanHandler)
+	http.HandleFunc("/v2/scan", v2ScanHandler)
 	http.HandleFunc("/scanPath", scanPathHandler)
 	http.HandleFunc("/scanHandlerBody", scanHandlerBody)
-  	http.HandleFunc("/version", clamversion)
+	http.HandleFunc("/version", clamversion)
 	http.HandleFunc("/", home)
 
 	// Prometheus metrics
