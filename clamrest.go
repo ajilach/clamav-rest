@@ -118,8 +118,16 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(resJson))
 }
 
-//This is where the action happens.
+func v2ScanHandler(w http.ResponseWriter, r *http.Request) {
+	scanner(w, r, 2)
+}
+
+// This is where the action happens.
 func scanHandler(w http.ResponseWriter, r *http.Request) {
+	scanner(w, r, 1)
+}
+
+func scanner(w http.ResponseWriter, r *http.Request, version int) {
 	switch r.Method {
 	//POST takes the uploaded file(s) and saves it to disk.
 	case "POST":
@@ -141,12 +149,26 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 
 			//if part.FileName() is empty, skip this iteration.
 			if part.FileName() == "" {
+				if version == 2 {
+					respJson := "{ \"Status\": \"ERROR\", \"Description\": \"MimePart FileName missing!\" }"
+					w.WriteHeader(http.StatusUnprocessableEntity)
+					fmt.Fprint(w, respJson)
+					fmt.Printf("%v Not scanning, MimePart FileName not supplied\n", time.Now().Format(time.RFC3339))
+				}
 				continue
 			}
 
-			fmt.Printf(time.Now().Format(time.RFC3339) + " Started scanning: " + part.FileName() + "\n")
+			fmt.Printf("%v Started scanning: %v\n", time.Now().Format(time.RFC3339), part.FileName())
 			var abort chan bool
 			response, err := c.ScanStream(part, abort)
+			if err != nil {
+				fmt.Printf("%v Clamd returned an error, %v\n", time.Now().Format(time.RFC3339), err)
+				w.WriteHeader(http.StatusRequestEntityTooLarge)
+				respJson := fmt.Sprintf("{ \"Status\": \"%s\", \"Description\": \"%s\" }",
+					clamd.RES_PARSE_ERROR, fmt.Sprintf("Scanning aborted, the underlying process returned an error, %v\n", err))
+				w.Write([]byte(respJson))
+				continue
+			}
 			for s := range response {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				respJson := fmt.Sprintf("{ \"Status\": \"%s\", \"Description\": \"%s\" }", s.Status, s.Description)
@@ -155,6 +177,10 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusOK)
 				case clamd.RES_FOUND:
 					w.WriteHeader(http.StatusNotAcceptable)
+					if version == 2 {
+						fmt.Printf("%v Virus FOUND, filename: %v\n", time.Now().Format(time.RFC3339), part.FileName())
+						noOfFoundViruses.Inc()
+					}
 				case clamd.RES_ERROR:
 					w.WriteHeader(http.StatusBadRequest)
 				case clamd.RES_PARSE_ERROR:
@@ -162,11 +188,16 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 				default:
 					w.WriteHeader(http.StatusNotImplemented)
 				}
+				if err != nil {
+					fmt.Printf("received error from clamd, %v", err)
+					w.WriteHeader(http.StatusInternalServerError)
+				}
 				fmt.Fprint(w, respJson)
-				fmt.Printf(time.Now().Format(time.RFC3339)+" Scan result for: %v, %v\n", part.FileName(), s)
+				fmt.Printf("%v Scan result for: %v, %v\n", time.Now().Format(time.RFC3339), part.FileName(), s)
 			}
-			fmt.Printf(time.Now().Format(time.RFC3339) + " Finished scanning: " + part.FileName() + "\n")
+			fmt.Printf("%v Finished scanning: %v\n", time.Now().Format(time.RFC3339), part.FileName())
 		}
+
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
