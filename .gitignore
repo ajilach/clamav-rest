@@ -3,3 +3,4 @@ src
 *.swp
 clamrest
 pyenv
+__debug*
