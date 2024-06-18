@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -19,8 +18,13 @@ import (
 
 var opts map[string]string
 
+var noOfFoundViruses = prometheus.NewCounter(prometheus.CounterOpts{
+	Name: "no_of_found_viruses",
+	Help: "The total number of found viruses",
+})
+
 func init() {
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 }
 
 func clamversion(w http.ResponseWriter, r *http.Request) {
