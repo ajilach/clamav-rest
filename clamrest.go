@@ -223,6 +223,7 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		case clamd.RES_FOUND:
 			w.WriteHeader(http.StatusNotAcceptable)
+			noOfFoundViruses.Inc()
 		case clamd.RES_ERROR:
 			w.WriteHeader(http.StatusBadRequest)
 		case clamd.RES_PARSE_ERROR:
@@ -266,6 +267,7 @@ func main() {
 	reg.MustRegister(collectors.NewGoCollector(
 		collectors.WithGoCollections(collectors.GoRuntimeMemStatsCollection | collectors.GoRuntimeMetricsCollection),
 	))
+	reg.MustRegister(noOfFoundViruses)
 
 	for _, e := range os.Environ() {
 		pair := strings.Split(e, "=")
