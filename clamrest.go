@@ -155,7 +155,7 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 			//if part.FileName() is empty, skip this iteration.
 			if part.FileName() == "" {
 				if version == 2 {
-					fileResp := scanResponse{Status: "ERROR", Description: "MimePart FileName missing"}
+					fileResp := scanResponse{Status: "ERROR", Description: "MimePart FileName missing", httpStatus: 422}
 					resp = append(resp, fileResp)
 					w.WriteHeader(http.StatusUnprocessableEntity)
 					fmt.Printf("%v Not scanning, MimePart FileName not supplied\n", time.Now().Format(time.RFC3339))
@@ -233,8 +233,8 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 // this func returns 406 if one file contains a virus, 413 if one file wasn't scanable due to file size exceeded (closed connection) and otherwise 200 OK.
 func getResponseStatus(responses []scanResponse) int {
 	result := 200
-	for _, s := range responses {
-		switch s.httpStatus {
+	for _, r := range responses {
+		switch r.httpStatus {
 		case 406:
 			//early return if virus is found
 			return 406
@@ -244,6 +244,8 @@ func getResponseStatus(responses []scanResponse) int {
 			result = 412
 		case 413:
 			result = 413
+		case 422:
+			result = 422
 		case 501:
 			result = 501
 		}
