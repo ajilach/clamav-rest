@@ -157,7 +157,6 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 				if version == 2 {
 					fileResp := scanResponse{Status: "ERROR", Description: "MimePart FileName missing", httpStatus: 422}
 					resp = append(resp, fileResp)
-					w.WriteHeader(http.StatusUnprocessableEntity)
 					fmt.Printf("%v Not scanning, MimePart FileName not supplied\n", time.Now().Format(time.RFC3339))
 				}
 				continue
