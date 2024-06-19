@@ -229,7 +229,7 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 	}
 }
 
-// this func returns 406 if one file contains a virus, 413 if one file wasn't scanable due to file size exceeded (closed connection) and otherwise 200 OK.
+// this func returns 406 if one file contains a virus
 func getResponseStatus(responses []scanResponse) int {
 	result := 200
 	for _, r := range responses {
