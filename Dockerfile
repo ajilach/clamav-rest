@@ -8,7 +8,7 @@ WORKDIR /go/src
 
 # Build go package
 ADD . /go/src/clamav-rest/
-RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
+RUN cd /go/src/clamav-rest && go mod tidy && go build -v
 
 FROM alpine:3.19
 
