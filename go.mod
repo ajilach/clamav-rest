@@ -1,6 +1,6 @@
 module github.com/ajilach/clamav-rest
 
-go 1.22.0
+go 1.22.4
 
 require (
 	github.com/dutchcoders/go-clamd v0.0.0-20170520113014-b970184f4d9e
