@@ -77,6 +77,56 @@ func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(resJson))
 }
 
+func handleScanResults(scanResults chan* clamd.ScanResult, path string, w http.ResponseWriter) {
+    for s := range scanResults {
+        w.Header().Set("Content-Type", "application/json; charset=utf-8")
+        respJson := fmt.Sprintf("{ \"Status\": \"%s\", \"Description\": \"%s\" }", s.Status, s.Description)
+        switch s.Status {
+            case clamd.RES_OK:
+                w.WriteHeader(http.StatusOK)
+            case clamd.RES_FOUND:
+                w.WriteHeader(http.StatusNotAcceptable)
+            case clamd.RES_ERROR:
+                w.WriteHeader(http.StatusBadRequest)
+            case clamd.RES_PARSE_ERROR:
+                w.WriteHeader(http.StatusPreconditionFailed)
+            default:
+                w.WriteHeader(http.StatusNotImplemented)
+        }
+        fmt.Fprint(w, respJson)
+        fmt.Printf(time.Now().Format(time.RFC3339)+" Scan result for: %v, %v\n", path, s)
+    }
+}
+
+func scanFileHandler(w http.ResponseWriter, r *http.Request) {
+	paths, ok := r.URL.Query()["path"]
+	if !ok || len(paths[0]) < 1 {
+		log.Println("Url Param 'path' is missing")
+		return
+	}
+
+	path := paths[0]
+
+	c := clamd.NewClamd(opts["CLAMD_PORT"])
+    fmt.Printf(time.Now().Format(time.RFC3339) + " Started scanning: " + path + "\n")
+	response, err := c.ScanFile(path)
+
+    if err != nil {
+		errJson, eErr := json.Marshal(err)
+		if eErr != nil {
+			fmt.Println(eErr)
+			return
+		}
+		fmt.Fprint(w, string(errJson))
+		return
+	}
+
+    handleScanResults(response, path, w)
+
+    fmt.Printf(time.Now().Format(time.RFC3339) + " Finished scanning: " + path + "\n")
+}
+
+
 func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	paths, ok := r.URL.Query()["path"]
 	if !ok || len(paths[0]) < 1 {
@@ -114,7 +164,6 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(resJson))
 }
 
-//This is where the action happens.
 func scanHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	//POST takes the uploaded file(s) and saves it to disk.
@@ -143,24 +192,9 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf(time.Now().Format(time.RFC3339) + " Started scanning: " + part.FileName() + "\n")
 			var abort chan bool
 			response, err := c.ScanStream(part, abort)
-			for s := range response {
-				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				respJson := fmt.Sprintf("{ \"Status\": \"%s\", \"Description\": \"%s\" }", s.Status, s.Description)
-				switch s.Status {
-				case clamd.RES_OK:
-					w.WriteHeader(http.StatusOK)
-				case clamd.RES_FOUND:
-					w.WriteHeader(http.StatusNotAcceptable)
-				case clamd.RES_ERROR:
-					w.WriteHeader(http.StatusBadRequest)
-				case clamd.RES_PARSE_ERROR:
-					w.WriteHeader(http.StatusPreconditionFailed)
-				default:
-					w.WriteHeader(http.StatusNotImplemented)
-				}
-				fmt.Fprint(w, respJson)
-				fmt.Printf(time.Now().Format(time.RFC3339)+" Scan result for: %v, %v\n", part.FileName(), s)
-			}
+
+			handleScanResults(response, part.FileName(), w)
+
 			fmt.Printf(time.Now().Format(time.RFC3339) + " Finished scanning: " + part.FileName() + "\n")
 		}
 	default:
@@ -180,24 +214,8 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 	var abort chan bool
 	defer r.Body.Close()
 	response, _ := c.ScanStream(r.Body, abort)
-	for s := range response {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		respJson := fmt.Sprintf("{ Status: %q, Description: %q }", s.Status, s.Description)
-		switch s.Status {
-		case clamd.RES_OK:
-			w.WriteHeader(http.StatusOK)
-		case clamd.RES_FOUND:
-			w.WriteHeader(http.StatusNotAcceptable)
-		case clamd.RES_ERROR:
-			w.WriteHeader(http.StatusBadRequest)
-		case clamd.RES_PARSE_ERROR:
-			w.WriteHeader(http.StatusPreconditionFailed)
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-		}
-		fmt.Fprint(w, respJson)
-		fmt.Printf(time.Now().Format(time.RFC3339)+" Scan result for plain body: %v\n", s)
-	}
+
+	handleScanResults(response, "body", w)
 }
 
 func waitForClamD(port string, times int) {
@@ -248,6 +266,7 @@ func main() {
 	fmt.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
 
 	http.HandleFunc("/scan", scanHandler)
+	http.HandleFunc("/scanFile", scanFileHandler)
 	http.HandleFunc("/scanPath", scanPathHandler)
 	http.HandleFunc("/scanHandlerBody", scanHandlerBody)
   	http.HandleFunc("/version", clamversion)

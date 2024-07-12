@@ -5,6 +5,7 @@
 - [Installation](#installation)
 - [Quick Start](#quick-start)
     - [Status Codes](#status-codes)
+- [Additional endpoints](#additional-endpoints)
 - [Configuration](#configuration)
     - [Environment Variables](#environment-variables)
     - [Networking](#networking)  
@@ -115,6 +116,44 @@ Content-Length: 33
 - 406 - INFECTED
 - 412 - unable to parse file
 - 501 - unknown request
+
+
+# Additional endpoints
+
+## Print version and signature dates
+
+```bash
+$ curl -i http://localhost:9000/version
+
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Date: Fri, 12 Jul 2024 12:21:59 GMT
+Content-Length: 90
+
+{ "Clamav": "1.2.2", "Signature": "27333" , "Signature_date": "Thu Jul 11 10:35:59 2024" }
+```
+
+## Scan files on the file system (should be mounted into the container of course)
+
+Both endpoints can handle files and paths:
+
+```bash
+$ curl -i http://localhost:9000/scanPath?path=/scandirectory/eicar.txt
+
+(uses clamd ALLMATCHSCAN) or
+
+$ curl -i http://localhost:9000/scanFile?path=/scandirectory/eicar.txt
+
+(uses clamd SCAN)
+
+HTTP/1.1 406 Not Acceptable
+Content-Type: application/json; charset=utf-8
+Date: Fri, 12 Jul 2024 12:27:44 GMT
+Content-Length: 60
+
+{ "Status": "FOUND", "Description": "Win.Test.EICAR_HDB-1" }
+```
+
 
 # Configuration
 
