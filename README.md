@@ -56,7 +56,7 @@ Test that service detects common test virus signature:
 
 **HTTP**
 ```bash
-$ curl -i -F "file=@eicar.com.txt" http://localhost:9000/scan
+$ curl -i -F "file=@eicar.com.txt" http://localhost:9000/v2/scan
 HTTP/1.1 100 Continue
 
 HTTP/1.1 406 Not Acceptable
@@ -69,7 +69,7 @@ Content-Length: 56
 
 **HTTPS**
 ```bash
-$ curl -i -k -F "file=@eicar.com.txt" https://localhost:9443/scan
+$ curl -i -k -F "file=@eicar.com.txt" https://localhost:9443/v2/scan
 HTTP/1.1 100 Continue
 
 HTTP/1.1 406 Not Acceptable
@@ -84,7 +84,7 @@ Test that service returns 200 for clean file:
 
 **HTTP**
 ```bash
-$ curl -i -F "file=@clamrest.go" http://localhost:9000/scan
+$ curl -i -F "file=@clamrest.go" http://localhost:9000/v2/scan
 
 HTTP/1.1 100 Continue
 
@@ -97,7 +97,7 @@ Content-Length: 33
 ```
 **HTTPS**
 ```bash
-$ curl -i -k -F "file=@clamrest.go" https://localhost:9443/scan
+$ curl -i -k -F "file=@clamrest.go" https://localhost:9443/v2/scan
 
 HTTP/1.1 100 Continue
 
