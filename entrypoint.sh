@@ -7,6 +7,7 @@ cp /etc/clamav/* /clamav/etc/
 
 sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/freshclam.conf
 sed -i 's/^#TemporaryDirectory .*$/TemporaryDirectory \/clamav\/tmp/g' /clamav/etc/clamd.conf
+sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/clamd.conf
 
 # Replace values with environment variables in clamd.conf
 sed -i 's/^#MaxScanSize .*$/MaxScanSize '"$MAX_SCAN_SIZE"'/g' /clamav/etc/clamd.conf
@@ -30,7 +31,7 @@ fi
 
 (
     freshclam --config-file=/clamav/etc/freshclam.conf --daemon --checks=$SIGNATURE_CHECKS &
-    clamd --config-file=/clamav/etc/clamd.conf --datadir=/clamav/data &
+    clamd --config-file=/clamav/etc/clamd.conf &
     /usr/bin/clamav-rest &
 ) 2>&1 | tee -a /var/log/clamav/clamav.log
 
