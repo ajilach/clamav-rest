@@ -6,65 +6,142 @@ on:
   #   - cron: '0 0 * * 6' # At 12:00 AM, only on Saturday
 
 env:
-  IMAGE_NAME: "clamav-rest"
-
-  REGISTRY_USER: ajilaag
+  REGISTRY_IMAGE: "${{ vars.DOCKER_USER }}/clamav-rest"
+  REGISTRY_USER: ${{ vars.DOCKER_USER }}
   REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
 permissions:
   contents: write
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          # - linux/arm/v6
+          # - linux/arm/v7
+          - linux/arm64
 
     outputs:
-      image_digest: ${{ steps.container_metadata.outputs.digest }}
-      image_tags: ${{ steps.meta_dev.outputs.tags }}
+      image_tags: ${{ steps.meta.outputs.tags }}
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
-    - name: Log in to DockerHub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ env.REGISTRY_USER }}
-        password: ${{ env.REGISTRY_PASSWORD }}
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Extract metadata (tags, labels) for Docker
-      id: meta_dev
-      uses: docker/metadata-action@v4
-      with:
-        images: ajilaag/${{ env.IMAGE_NAME }}
-        tags: |
-          type=raw,value={{date 'YYYYMMDD'}}
-          Type=raw,value=latest,enable={{is_default_branch}}
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          # https://github.com/docker/metadata-action?tab=readme-ov-file#typeschedule
+          tags: |
+            type=schedule,value={{date 'YYYYMMDD'}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
 
-    - name: Build and push to DockerHub
-      id: container_metadata
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.meta_dev.outputs.tags }}
-        labels: ${{ steps.meta_dev.outputs.labels }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-    - name: Get current date
-      id: date
-      run: echo "::set-output name=date::$(date +'%Y%m%d')"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Add version tag
-      id: tag_version
-      uses: laputansoft/github-tag-action@v4.6
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: ${{ steps.date.outputs.date }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
 
-    - name: Create a GitHub release
-      uses: ncipollo/release-action@v1
-      with:
-        tag: ${{ steps.date.outputs.date }}
-        name: Release ${{ steps.date.outputs.date }}
-        body: ${{ steps.tag_version.outputs.changelog }}
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=raw,value={{date 'YYYYMMDD'}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+
+      - name: Add Github version tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.date.outputs.date }}
+
+      - name: Create a GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.date.outputs.date }}
+          name: Release ${{ steps.date.outputs.date }}
+          body: ${{ steps.tag_version.outputs.changelog }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+      -
+        name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
