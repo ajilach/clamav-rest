@@ -116,6 +116,8 @@ Content-Length: 33
 - 400 - ClamAV returned general error for file
 - 406 - INFECTED
 - 412 - unable to parse file
+- 413 - request entity too large, the file exceeds the scannable limit. Set MAX_FILE_SIZE to scan larger files
+- 422 - filename is missing in MimePart
 - 501 - unknown request
 
 # Configuration
