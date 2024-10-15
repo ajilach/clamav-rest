@@ -20,6 +20,8 @@ This is two in one docker image so it runs open source virus scanner ClamAV (htt
 
 # Updates
 
+As of October 15 2024, clamav handles database updates correctly thanks to [christianbumann](https://github.com/christianbumann).
+
 As of May 2024, the releases are built for multiple architectures thanks to efforts from [kcirtapfromspace](https://github.com/kcirtapfromspace) and support non-root read-only deployments thanks to [robaca](https://github.com/robaca).
 
 The additional endpoint `/version` is now available to check the `clamd` version and signature date. Thanks [pastral](https://github.com/pastral).
