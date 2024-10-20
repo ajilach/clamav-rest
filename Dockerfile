@@ -10,7 +10,7 @@ WORKDIR /go/src
 ADD . /go/src/clamav-rest/
 RUN cd /go/src/clamav-rest && go mod tidy && go build -v
 
-FROM alpine:3.20
+FROM clamav/clamav:1.4.1
 
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
@@ -29,23 +29,32 @@ ENV TZ=Europe/Zurich
 ADD ./server.* /etc/ssl/clamav-rest/
 
 # Install ClamAV
-RUN apk --no-cache add clamav clamav-libunrar \
-    && mkdir /run/clamav \
-    && chown clamav:clamav /run/clamav
+#RUN apk --no-cache add clamav clamav-libunrar \
+#    && 
+RUN mkdir /run/clamav \
+    && chown clamav:clamav /run/clamav 
+
 
 # Configure clamAV to run in foreground with port 3310
-RUN sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/clamd.conf \
+RUN sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/clamd.conf \
     && sed -i 's/^#TCPSocket .*$/TCPSocket 3310/g' /etc/clamav/clamd.conf \
-    && sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/freshclam.conf
+    && sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/freshclam.conf
 
 RUN freshclam --quiet --no-dns
 
 COPY entrypoint.sh /usr/bin/
 
-RUN mkdir /clamav \
-    && chown -R clamav.clamav /clamav \
+RUN mkdir -p /clamav/etc \
+    && mkdir -p /clamav/data \
+    && mkdir -p /clamav/tmp \
+    && mv /etc/clamav/* /clamav/etc/ \
+    && rm -r /etc/clamav/ \
+    && ln -s /clamav/etc/ /etc/clamav
+
+RUN chown -R clamav.clamav /clamav \
     && chown -R clamav.clamav /var/log/clamav \
-    && chown -R clamav.clamav /run/clamav
+    && chown -R clamav.clamav /run/clamav 
+
 
 ENV PORT=9000
 ENV SSL_PORT=9443

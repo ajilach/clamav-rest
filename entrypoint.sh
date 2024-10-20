@@ -1,11 +1,8 @@
 #!/bin/bash
 
-mkdir -p /clamav/etc
-mkdir -p /clamav/data
-mkdir -p /clamav/tmp
-cp /etc/clamav/* /clamav/etc/
 
 sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/freshclam.conf
+sed -i 's/^#?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' /clamav/etc/freshclam.conf
 sed -i 's/^#TemporaryDirectory .*$/TemporaryDirectory \/clamav\/tmp/g' /clamav/etc/clamd.conf
 sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/clamd.conf
 
