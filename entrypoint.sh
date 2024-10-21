@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cp /etc/clamav/* /clamav/etc/
 
 sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/freshclam.conf
 sed -i 's/^#?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' /clamav/etc/freshclam.conf

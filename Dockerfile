@@ -45,10 +45,7 @@ COPY entrypoint.sh /usr/bin/
 
 RUN mkdir -p /clamav/etc \
     && mkdir -p /clamav/data \
-    && mkdir -p /clamav/tmp \
-    && mv /etc/clamav/* /clamav/etc/ \
-    && rm -r /etc/clamav/ \
-    && ln -s /clamav/etc/ /etc/clamav
+    && mkdir -p /clamav/tmp 
 
 RUN chown -R clamav.clamav /clamav \
     && chown -R clamav.clamav /var/log/clamav \
