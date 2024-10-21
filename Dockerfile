@@ -10,7 +10,7 @@ WORKDIR /go/src
 ADD . /go/src/clamav-rest/
 RUN cd /go/src/clamav-rest && go mod tidy && go build -v
 
-FROM clamav/clamav:1.4.1
+FROM alpine:3.20
 
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
@@ -29,9 +29,8 @@ ENV TZ=Europe/Zurich
 ADD ./server.* /etc/ssl/clamav-rest/
 
 # Install ClamAV
-#RUN apk --no-cache add clamav clamav-libunrar \
-#    && 
-RUN mkdir /run/clamav \
+RUN apk --no-cache add clamav clamav-libunrar \
+    && mkdir /run/clamav \
     && chown clamav:clamav /run/clamav 
 
 
