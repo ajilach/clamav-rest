@@ -181,6 +181,10 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 			for s := range response {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				eachResp := scanResponse{Status: s.Status, Description: s.Description}
+				if version == 2 {
+					eachResp.FileName = part.FileName()
+					fmt.Printf("scanned file %v", part.FileName())
+				}
 				//Set each possible status and then send the most appropriate one
 				switch s.Status {
 				case clamd.RES_OK:
@@ -188,7 +192,7 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 				case clamd.RES_FOUND:
 					eachResp.httpStatus = 406
 					if version == 2 {
-						fmt.Printf("%v Virus FOUND, filename: %v\n", time.Now().Format(time.RFC3339), part.FileName())
+						fmt.Printf("%v Virus FOUND", time.Now().Format(time.RFC3339))
 						noOfFoundViruses.Inc()
 					}
 				case clamd.RES_ERROR:
