@@ -16,14 +16,14 @@
 
 # Introduction
 
-This is two in one docker image so it runs open source virus scanner ClamAV (https://www.clamav.net/), automatic virus definition updates as background process and REST API interface to interact with ClamAV process.
+This is a two in one docker image which runs the open source virus scanner ClamAV (https://www.clamav.net/), performs automatic virus definition updates as a background process and provides a REST API interface to interact with the ClamAV process.
 
 # Updates
 
-As of October 21 2024, freshclam notifies the correct .clamd.conf so the clamd is notified about updates and the correct version is returned now.
-This is an additional fix to latest fix from October 15 2024 which was not working. Thanks to [christianbumann](https://github.com/christianbumann).
+As of October 21 2024, freshclam notifies the correct `.clamd.conf` so that `clamd` is notified about updates and the correct version is returned now.
+This is an additional fix to the latest fix from October 15 2024 which was not working. Thanks to [christianbumann](https://github.com/christianbumann) and [arizon-dread](https://github.com/arizon-dread).
 
-As of October 15 2024, clamav handles database updates correctly thanks to [christianbumann](https://github.com/christianbumann). Unfortunately the database still doesn't gets correctly updated.
+As of October 15 2024, clamav was thought to handle database updates correctly thanks to [christianbumann](https://github.com/christianbumann). It turned out that this was not the case.
 
 As of May 2024, the releases are built for multiple architectures thanks to efforts from [kcirtapfromspace](https://github.com/kcirtapfromspace) and support non-root read-only deployments thanks to [robaca](https://github.com/robaca).
 
