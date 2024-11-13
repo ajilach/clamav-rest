@@ -2,10 +2,15 @@
 
 cp /etc/clamav/* /clamav/etc/
 
+# Replace values in freshclam.conf
+sed -i 's/^#\?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' /clamav/etc/freshclam.conf
 sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/freshclam.conf
 sed -i 's/^#\?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' /clamav/etc/freshclam.conf
 sed -i 's/^#TemporaryDirectory .*$/TemporaryDirectory \/clamav\/tmp/g' /clamav/etc/clamd.conf
 sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/clamd.conf
+
+# Replace values with environment variables in freshclam.conf
+sed -i 's/^#\?Checks .*$/Checks '"$SIGNATURE_CHECKS"'/g' /clamav/etc/freshclam.conf
 
 # Replace values with environment variables in clamd.conf
 sed -i 's/^#MaxScanSize .*$/MaxScanSize '"$MAX_SCAN_SIZE"'/g' /clamav/etc/clamd.conf
@@ -28,9 +33,18 @@ if [ -z "$(ls -A /clamav/data)" ]; then
 fi
 
 (
-    freshclam --config-file=/clamav/etc/freshclam.conf --daemon --checks=$SIGNATURE_CHECKS &
+    freshclam --config-file=/clamav/etc/freshclam.conf --daemon &
     clamd --config-file=/clamav/etc/clamd.conf &
     /usr/bin/clamav-rest &
+    # Force reload the virus database through the clamd socket after 120s.
+    # Starting freshclam and clamd async ends up that a newer database version is loaded with
+    # freshclam, but the clamd still keep the old version existing before the update because 
+    # the socket from clamd is not yet ready to inform, what is indicated in the log
+    # during the startup of the container (WARNING: Clamd was NOT notified: Can't connect to clamd through /run/clamav/clamd.sock: No such file or directory).
+    # So only if a newer database version is available clamd will be notified next time, and this can take hours/days.
+    # Remarks: The socket port is configured in the .Dockerfile itself.
+    sleep 120s
+    echo RELOAD | nc 127.0.0.01 3310 &
 ) 2>&1 | tee -a /var/log/clamav/clamav.log
 
 pids=`jobs -p`
