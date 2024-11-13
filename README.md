@@ -23,7 +23,7 @@ This is a two in one docker image which runs the open source virus scanner ClamA
 As of October 21 2024, freshclam notifies the correct `.clamd.conf` so that `clamd` is notified about updates and the correct version is returned now.
 This is an additional fix to the latest fix from October 15 2024 which was not working. Thanks to [christianbumann](https://github.com/christianbumann) and [arizon-dread](https://github.com/arizon-dread).
 
-As of October 15 2024, clamav was thought to handle database updates correctly thanks to [christianbumann](https://github.com/christianbumann). It turned out that this was not the case.
+As of October 15 2024, ClamAV was thought to handle database updates correctly thanks to [christianbumann](https://github.com/christianbumann). It turned out that this was not the case.
 
 As of May 2024, the releases are built for multiple architectures thanks to efforts from [kcirtapfromspace](https://github.com/kcirtapfromspace) and support non-root read-only deployments thanks to [robaca](https://github.com/robaca).
 
