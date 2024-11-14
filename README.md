@@ -61,7 +61,7 @@ Test that service detects common test virus signature:
 
 **HTTP**
 ```bash
-$ curl -i -F "file=@eicar.com.txt" http://localhost:9000/scan
+$ curl -i -F "file=@eicar.com.txt" http://localhost:9000/v2/scan
 HTTP/1.1 100 Continue
 
 HTTP/1.1 406 Not Acceptable
@@ -69,12 +69,12 @@ Content-Type: application/json; charset=utf-8
 Date: Mon, 28 Aug 2017 20:22:34 GMT
 Content-Length: 56
 
-{ "Status": "FOUND", "Description": "Eicar-Test-Signature" }
+[{ "Status": "FOUND", "Description": "Eicar-Test-Signature","FileName":"eicar.com.txt"}]
 ```
 
 **HTTPS**
 ```bash
-$ curl -i -k -F "file=@eicar.com.txt" https://localhost:9443/scan
+$ curl -i -k -F "file=@eicar.com.txt" https://localhost:9443/v2/scan
 HTTP/1.1 100 Continue
 
 HTTP/1.1 406 Not Acceptable
@@ -82,14 +82,14 @@ Content-Type: application/json; charset=utf-8
 Date: Mon, 28 Aug 2017 20:22:34 GMT
 Content-Length: 56
 
-{ "Status": "FOUND", "Description": "Eicar-Test-Signature" }
+[{ "Status": "FOUND", "Description": "Eicar-Test-Signature","FileName":"eicar.com.txt"}]
 ```
 
 Test that service returns 200 for clean file:
 
 **HTTP**
 ```bash
-$ curl -i -F "file=@clamrest.go" http://localhost:9000/scan
+$ curl -i -F "file=@clamrest.go" http://localhost:9000/v2/scan
 
 HTTP/1.1 100 Continue
 
@@ -98,11 +98,11 @@ Content-Type: application/json; charset=utf-8
 Date: Mon, 28 Aug 2017 20:23:16 GMT
 Content-Length: 33
 
-{ "Status": "OK", "Description": "" }
+[{ "Status": "OK", "Description": "","FileName":"clamrest.go"}]
 ```
 **HTTPS**
 ```bash
-$ curl -i -k -F "file=@clamrest.go" https://localhost:9443/scan
+$ curl -i -k -F "file=@clamrest.go" https://localhost:9443/v2/scan
 
 HTTP/1.1 100 Continue
 
@@ -111,7 +111,7 @@ Content-Type: application/json; charset=utf-8
 Date: Mon, 28 Aug 2017 20:23:16 GMT
 Content-Length: 33
 
-{ "Status": "OK", "Description": "" }
+[{ "Status": "OK", "Description": "","FileName":"clamrest.go"}]
 ```
 
 ## Status Codes
@@ -119,6 +119,8 @@ Content-Length: 33
 - 400 - ClamAV returned general error for file
 - 406 - INFECTED
 - 412 - unable to parse file
+- 413 - request entity too large, the file exceeds the scannable limit. Set MAX_FILE_SIZE to scan larger files
+- 422 - filename is missing in MimePart
 - 501 - unknown request
 
 # Configuration
