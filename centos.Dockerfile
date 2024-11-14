@@ -44,7 +44,15 @@ RUN freshclam --quiet --no-dns
 ADD ./server.* /etc/ssl/clamav-rest/
 
 COPY entrypoint.sh /usr/bin/
-RUN mkdir /etc/clamav/ && ln -s /etc/clamd.d/scan.conf /etc/clamav/clamd.conf
+
+# Create folders for clamav so it matches what happens in entrypoint.sh
+RUN install -d -m 0775 -oclamupdate -groot /var/log/clamav /etc/clamav /clamav /clamav/etc /clamav/data /clamav/tmp \
+    && cp /etc/clamd.d/scan.conf /etc/clamav/clamd.conf \
+    && cp /etc/freshclam.conf /etc/clamav/freshclam.conf \
+    && chown clamupdate:root /etc/clamav/freshclam.conf
+    
+# On CentOS, clamupdate is the user.
+USER clamupdate
 
 EXPOSE 9000
 EXPOSE 9443
