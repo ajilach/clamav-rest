@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8 as build
+FROM quay.io/centos/centos:stream9 as build
 
 # Set timezone to Europe/Zurich
 ENV TZ=Europe/Zurich
