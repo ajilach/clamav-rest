@@ -16,9 +16,9 @@ ENV GOPATH=/go \
 
 # Build go package
 ADD . /go/src/clamav-rest/
-RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
+RUN cd /go/src/clamav-rest && go mod tidy && go build -v
 
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
