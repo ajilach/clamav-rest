@@ -26,7 +26,7 @@ COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
 # Install ClamAV
 RUN dnf -y update \
     && dnf install -y epel-release \
-    && dnf install -y clamav-server clamav-data clamav-update clamav-filesystem clamav clamav-scanner-systemd clamav-devel clamav-lib clamav-server-systemd \
+    && dnf install -y clamav-server clamav-data clamav-update clamav-filesystem clamav clamav-scanner-systemd clamav-devel clamav-lib clamav-server-systemd nc \
     && mkdir /run/clamav \
     && chown clamscan:clamscan /run/clamav \
 # Clean
