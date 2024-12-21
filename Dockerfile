@@ -43,9 +43,9 @@ RUN freshclam --quiet --no-dns
 COPY entrypoint.sh /usr/bin/
 
 RUN mkdir /clamav \
-    && chown -R clamav.clamav /clamav \
-    && chown -R clamav.clamav /var/log/clamav \
-    && chown -R clamav.clamav /run/clamav
+    && chown -R clamav:clamav /clamav \
+    && chown -R clamav:clamav /var/log/clamav \
+    && chown -R clamav:clamav /run/clamav
 
 ENV PORT=9000
 ENV SSL_PORT=9443
