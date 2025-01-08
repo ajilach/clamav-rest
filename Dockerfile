@@ -1,4 +1,4 @@
-FROM golang:alpine3.20 as build
+FROM golang:alpine3.20 AS build
 
 # Update libraries
 RUN apk update && apk upgrade
@@ -47,9 +47,9 @@ RUN mkdir -p /clamav/etc \
     && mkdir -p /clamav/data \
     && mkdir -p /clamav/tmp 
 
-RUN chown -R clamav.clamav /clamav \
-    && chown -R clamav.clamav /var/log/clamav \
-    && chown -R clamav.clamav /run/clamav 
+RUN chown -R clamav:clamav /clamav \
+    && chown -R clamav:clamav /var/log/clamav \
+    && chown -R clamav:clamav /run/clamav 
 
 
 ENV PORT=9000
