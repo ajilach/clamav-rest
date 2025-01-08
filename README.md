@@ -196,6 +196,10 @@ docker build . -t clamav-rest
 docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest clamav-rest
 ```
 
+# History
+
+This work is based on the awesome work done by [o20ne/clamav-rest](https://github.com/o20ne/clamav-rest) which is based on [niilo/clamav-rest](https://github.com/niilo/clamav-rest) which is based on the original code from [osterzel/clamav-rest](https://github.com/osterzel/clamav-rest).
+
 # References
 
 * https://www.clamav.net
