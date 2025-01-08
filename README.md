@@ -59,7 +59,8 @@ docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest ajilaag/clamav-rest
 
 Test that service detects common test virus signature:
 
-**HTTP**
+**HTTP:**
+
 ```bash
 $ curl -i -F "file=@eicar.com.txt" http://localhost:9000/v2/scan
 HTTP/1.1 100 Continue
@@ -72,7 +73,8 @@ Content-Length: 56
 [{ "Status": "FOUND", "Description": "Eicar-Test-Signature","FileName":"eicar.com.txt"}]
 ```
 
-**HTTPS**
+**HTTPS:**
+
 ```bash
 $ curl -i -k -F "file=@eicar.com.txt" https://localhost:9443/v2/scan
 HTTP/1.1 100 Continue
@@ -87,7 +89,8 @@ Content-Length: 56
 
 Test that service returns 200 for clean file:
 
-**HTTP**
+**HTTP:**
+
 ```bash
 $ curl -i -F "file=@clamrest.go" http://localhost:9000/v2/scan
 
@@ -100,7 +103,8 @@ Content-Length: 33
 
 [{ "Status": "OK", "Description": "","FileName":"clamrest.go"}]
 ```
-**HTTPS**
+**HTTPS:**
+
 ```bash
 $ curl -i -k -F "file=@clamrest.go" https://localhost:9443/v2/scan
 
@@ -174,22 +178,22 @@ clamscan --database=/clamav/data --version
 
 [Prometheus metrics](https://prometheus.io/docs/guides/go-application/) were implemented, which can be retrieved as follows
 
-**HTTP**:
+**HTTP:**
 curl http://localhost:9000/metrics
 
 **HTTPS:**
 curl https://localhost:9443/metrics
 
-# Developing
+# Development
 
-Source Code can be found here: https://github.com/ajilach/clamav-rest
+Source code can be found here: https://github.com/ajilach/clamav-rest
 
 Build golang (linux) binary and docker image:
 
 ```bash
 # env GOOS=linux GOARCH=amd64 go build
-docker build . -t clamav-go-rest
-docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest clamav-go-rest
+docker build . -t clamav-rest
+docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest clamav-rest
 ```
 
 # References
