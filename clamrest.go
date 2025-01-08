@@ -104,8 +104,10 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var scanResults []*clamd.ScanResult
-
 	for responseItem := range response {
+		if responseItem.Status == clamd.RES_FOUND {
+			noOfFoundViruses.Inc()
+		}
 		scanResults = append(scanResults, responseItem)
 	}
 
@@ -219,7 +221,7 @@ func getHttpStatusByClamStatus(result *clamd.ScanResult) int {
 	case clamd.RES_OK:
 		return http.StatusOK //200
 	case clamd.RES_FOUND:
-		fmt.Printf("%v Virus FOUND", time.Now().Format(time.RFC3339))
+		fmt.Printf("%v Virus FOUND\n", time.Now().Format(time.RFC3339))
 		return http.StatusNotAcceptable //406
 	case clamd.RES_ERROR:
 		return http.StatusBadRequest //400
