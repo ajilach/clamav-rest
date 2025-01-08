@@ -186,26 +186,7 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 					fmt.Printf("scanned file %v", part.FileName())
 				}
 				//Set each possible status and then send the most appropriate one
-				switch s.Status {
-				case clamd.RES_OK:
-					eachResp.httpStatus = 200
-				case clamd.RES_FOUND:
-					eachResp.httpStatus = 406
-					if version == 2 {
-						fmt.Printf("%v Virus FOUND", time.Now().Format(time.RFC3339))
-						noOfFoundViruses.Inc()
-					}
-				case clamd.RES_ERROR:
-					eachResp.httpStatus = 400
-				case clamd.RES_PARSE_ERROR:
-					if s.Description == "File size limit exceeded" {
-						eachResp.httpStatus = 413
-					} else {
-						eachResp.httpStatus = 412
-					}
-				default:
-					eachResp.httpStatus = 501
-				}
+				eachResp.httpStatus = getHttpStatusByClamStatus(s)
 				resp = append(resp, eachResp)
 				fmt.Printf("%v Scan result for: %v, %v\n", time.Now().Format(time.RFC3339), part.FileName(), s)
 			}
@@ -233,12 +214,34 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 	}
 }
 
+func getHttpStatusByClamStatus(result *clamd.ScanResult) int {
+	switch result.Status {
+	case clamd.RES_OK:
+		return http.StatusOK //200
+	case clamd.RES_FOUND:
+		fmt.Printf("%v Virus FOUND", time.Now().Format(time.RFC3339))
+		return http.StatusNotAcceptable //406
+	case clamd.RES_ERROR:
+		return http.StatusBadRequest //400
+	case clamd.RES_PARSE_ERROR:
+		if result.Description == "File size limit exceeded" {
+			return http.StatusRequestEntityTooLarge //413
+		} else {
+			return http.StatusPreconditionFailed //412
+		}
+	default:
+		return http.StatusNotImplemented //501
+	}
+}
+
 // this func returns 406 if one file contains a virus
 func getResponseStatus(responses []scanResponse) int {
 	result := 200
 	for _, r := range responses {
 		switch r.httpStatus {
 		case 406:
+			//uptick the prometheus counter for detected viruses.
+			noOfFoundViruses.Inc()
 			//early return if virus is found
 			return 406
 		case 400:
@@ -283,21 +286,15 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for s := range response {
-		respJson := fmt.Sprintf("{ Status: %q, Description: %q }", s.Status, s.Description)
-		switch s.Status {
-		case clamd.RES_OK:
-			w.WriteHeader(http.StatusOK)
-		case clamd.RES_FOUND:
-			w.WriteHeader(http.StatusNotAcceptable)
-			noOfFoundViruses.Inc()
-		case clamd.RES_ERROR:
-			w.WriteHeader(http.StatusBadRequest)
-		case clamd.RES_PARSE_ERROR:
-			w.WriteHeader(http.StatusPreconditionFailed)
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-		}
-		fmt.Fprint(w, respJson)
+
+		resp := scanResponse{Status: s.Status, Description: s.Description}
+		//respJson := fmt.Sprintf("{ Status: %q, Description: %q }", s.Status, s.Description)
+		resp.httpStatus = getHttpStatusByClamStatus(s)
+
+		resps := []scanResponse{}
+		resps = append(resps, resp)
+		w.WriteHeader(getResponseStatus(resps))
+		fmt.Fprint(w, resp)
 		fmt.Printf("%v Scan result for plain body: %v\n", time.Now().Format(time.RFC3339), s)
 	}
 }
