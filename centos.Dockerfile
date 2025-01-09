@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8 as build
+FROM quay.io/centos/centos:stream9 as build
 
 # Set timezone to Europe/Zurich
 ENV TZ=Europe/Zurich
@@ -16,9 +16,9 @@ ENV GOPATH=/go \
 
 # Build go package
 ADD . /go/src/clamav-rest/
-RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
+RUN cd /go/src/clamav-rest && go mod tidy && go build -v
 
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
@@ -26,7 +26,7 @@ COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
 # Install ClamAV
 RUN dnf -y update \
     && dnf install -y epel-release \
-    && dnf install -y clamav-server clamav-data clamav-update clamav-filesystem clamav clamav-scanner-systemd clamav-devel clamav-lib clamav-server-systemd \
+    && dnf install -y clamav-server clamav-data clamav-update clamav-filesystem clamav clamav-scanner-systemd clamav-devel clamav-lib clamav-server-systemd nc \
     && mkdir /run/clamav \
     && chown clamscan:clamscan /run/clamav \
 # Clean
@@ -44,7 +44,15 @@ RUN freshclam --quiet --no-dns
 ADD ./server.* /etc/ssl/clamav-rest/
 
 COPY entrypoint.sh /usr/bin/
-RUN mkdir /etc/clamav/ && ln -s /etc/clamd.d/scan.conf /etc/clamav/clamd.conf
+
+# Create folders for clamav so it matches what happens in entrypoint.sh
+RUN install -d -m 0775 -oclamupdate -groot /var/log/clamav /etc/clamav /clamav /clamav/etc /clamav/data /clamav/tmp \
+    && cp /etc/clamd.d/scan.conf /etc/clamav/clamd.conf \
+    && cp /etc/freshclam.conf /etc/clamav/freshclam.conf \
+    && chown clamupdate:root /etc/clamav/freshclam.conf
+    
+# On CentOS, clamupdate is the user.
+USER clamupdate
 
 EXPOSE 9000
 EXPOSE 9443

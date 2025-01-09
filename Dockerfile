@@ -1,4 +1,4 @@
-FROM golang:alpine3.19 as build
+FROM golang:alpine3.20 AS build
 
 # Update libraries
 RUN apk update && apk upgrade
@@ -8,7 +8,7 @@ WORKDIR /go/src
 
 # Build go package
 ADD . /go/src/clamav-rest/
-RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
+RUN cd /go/src/clamav-rest && go mod tidy && go build -v
 
 FROM alpine:3.21
 
@@ -31,21 +31,26 @@ ADD ./server.* /etc/ssl/clamav-rest/
 # Install ClamAV
 RUN apk --no-cache add clamav clamav-libunrar \
     && mkdir /run/clamav \
-    && chown clamav:clamav /run/clamav
+    && chown clamav:clamav /run/clamav 
+
 
 # Configure clamAV to run in foreground with port 3310
-RUN sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/clamd.conf \
+RUN sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/clamd.conf \
     && sed -i 's/^#TCPSocket .*$/TCPSocket 3310/g' /etc/clamav/clamd.conf \
-    && sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/freshclam.conf
+    && sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/freshclam.conf
 
 RUN freshclam --quiet --no-dns
 
 COPY entrypoint.sh /usr/bin/
 
-RUN mkdir /clamav \
-    && chown -R clamav.clamav /clamav \
-    && chown -R clamav.clamav /var/log/clamav \
-    && chown -R clamav.clamav /run/clamav
+RUN mkdir -p /clamav/etc \
+    && mkdir -p /clamav/data \
+    && mkdir -p /clamav/tmp 
+
+RUN chown -R clamav:clamav /clamav \
+    && chown -R clamav:clamav /var/log/clamav \
+    && chown -R clamav:clamav /run/clamav 
+
 
 ENV PORT=9000
 ENV SSL_PORT=9443
