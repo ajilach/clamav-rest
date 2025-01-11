@@ -33,10 +33,6 @@ The additional endpoint `/version` is now available to check the `clamd` version
 
 Closed a security hole by upgrading our `Dockerfile` to the alpine base image version `3.19` thanks to [Marsup](https://github.com/Marsup).
 
-# Prerequisites
-
-This container doesn't do much on it's own unless you use an additional service or communicator to talk to it!
-
 # Installation
 
 Automated builds of the image are available on [Registry](https://hub.docker.com/r/ajilaag/clamav-rest) and is the recommended method of installation.
@@ -197,6 +193,14 @@ Build golang (linux) binary and docker image:
 docker build . -t clamav-rest
 docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest clamav-rest
 ```
+
+# Deprecations
+
+## `/scan` Endpoing  
+As of release [20250109](https://github.com/ajilach/clamav-rest/releases/tag/20250109) the `/scan` endpoint is deprecated and `/v2/scan` is now the preferred endpoint to use.  
+
+## centos.Dockerfile  
+The centos.Dockerfile has been bumped in the release [20250109](https://github.com/ajilach/clamav-rest/releases/tag/20250109) but will not be maintained going forward. If there are community users using it, please consider contributing to maintain it.  
 
 # History
 
