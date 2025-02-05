@@ -20,7 +20,7 @@ This is a two in one docker image which runs the open source virus scanner ClamA
 
 # Updates
 
-2025-01-08: [PR 50](https://github.com/ajilach/clamav-rest/pull/50) integrated which now provides a new `/v2` endpoint returning more scan result information: status, description, http status and a list of scanned files. See the PR for more details. The old `/scan` endpoint is now considered deprecated. Also, a file size scan limit has been added which can be configured through the `MAX_FILE_SIZE` environment variable.
+2025-01-08: [PR 50](https://github.com/ajilach/clamav-rest/pull/50) integrated which now provides a new `/v2` endpoint returning more scan result information: status, description, http status and a list of scanned files. See the PR for more details. The old `/scan` endpoint is now considered deprecated. Also, a file size scan limit has been added which can be configured through the `MAX_FILE_SIZE` environment variable. This update also fixes a bug that would falsely return `200 OK` if the first file in a multi file scan was clean, regardless if any of the following files contained viruses. All endpoints now increment the Prometheus virus metric counter when a virus is discovered during a scan.
 
 2024-10-21: freshclam notifies the correct `.clamd.conf` so that `clamd` is notified about updates and the correct version is returned now.
 This is an additional fix to the latest fix from October 15 2024 which was not working. Thanks to [christianbumann](https://github.com/christianbumann) and [arizon-dread](https://github.com/arizon-dread).
@@ -125,6 +125,20 @@ Content-Length: 33
 - 422 - filename is missing in MimePart
 - 501 - unknown request
 
+# Endpoints  
+## Utility endpoints 
+| Endpoint | Description |
+|----------|-------------| 
+| `/` | Home endpoint, returns stats for the running process | 
+| `/version` | Returns the clamav binary version and also the version of the virus signature databases and the signature update date. |
+| `/metrics` | Prometheus endpoint for scraping metrics. |
+## Scanning endpoints  
+| Endpoint | Description | Response sample |
+|----------|-------------|-----------------|
+| `/v2/scan` | Scanning endpoint, accepts a multipart/form-data request with one or more files and returns a json array with status, description and filename, along with most severe status code that was possible to determine. | response sample: `[{"Status":"OK","Description":"","FileName":"checksums.txt"}]` |
+| `/scanPath?path=/folder` | A scanning endpoint that will scan a folder, a practical example would be to mount a share into the container where you dump files in a folder, call scanPath and let it scan them all, then continue processing them | response sample: `[{"Raw":"/folder: OK","Description":"","Path":"/folder","Hash":"","Size":0,"Status":"OK"}]` |
+| `/scanHandlerBody` | This endpoints scans the content in the HTTP POST request body. | response sample: `{OK   200}` |
+| `/scan` | [DEPRECATED] This endpoint scans in a similar manner to `/v2/scan` but does return one or more json objects without a containing structure in between (no json array). It also does not include the filename as a json property. It is still present in the api for backwards compatibility reasons for those who still use it but it will also return headers indicating deprecation and pointing out the new, updated endpoint, `/v2/scan`. It does accept a multipart/form-data endpoint that by http standards can accept multiple files, and does scan them all, but the implementation of the endpoint indicates that it was originally (probably) meant to only scan one file at a time. Please don't rely on this endpoint to exist in the future, the project has an intention to sunset it in the future when it becomes a pain to maintain. | response sample: `{"Status":"OK","Description":""}` |
 # Configuration
 
 ## Environment Variables
@@ -196,8 +210,11 @@ docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest clamav-rest
 
 # Deprecations
 
-## `/scan` Endpoing  
+## `/scan` Endpoint  
 As of release [20250109](https://github.com/ajilach/clamav-rest/releases/tag/20250109) the `/scan` endpoint is deprecated and `/v2/scan` is now the preferred endpoint to use.  
+
+### Differences between `/scan` and `/v2/scan`  
+Since the endpoint can receive one or several files, the response has been updated to always be returned as a json array and the filename is now included as a property in the response, to make it easy to find out what file(s) contains virus. 
 
 ## centos.Dockerfile  
 The centos.Dockerfile has been bumped in the release [20250109](https://github.com/ajilach/clamav-rest/releases/tag/20250109) but will not be maintained going forward. If there are community users using it, please consider contributing to maintain it.  
