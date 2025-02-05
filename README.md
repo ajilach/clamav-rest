@@ -1,18 +1,27 @@
 # Table of Contents
-
+- [Table of Contents](#table-of-contents)
 - [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
+- [Updates](#updates)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-    - [Status Codes](#status-codes)
+  - [Status Codes](#status-codes)
+- [Endpoints](#endpoints)
+  - [Utility endpoints](#utility-endpoints)
+  - [Scanning endpoints](#scanning-endpoints)
 - [Configuration](#configuration)
-    - [Environment Variables](#environment-variables)
-    - [Networking](#networking)  
+  - [Environment Variables](#environment-variables)
+  - [Networking](#networking)
 - [Maintenance / Monitoring](#maintenance--monitoring)
-    - [Shell Access](#shell-access)
-
-- [Developing](#developing)    
+  - [Shell Access](#shell-access)
+  - [Prometheus](#prometheus)
+- [Development](#development)
+- [Deprecations](#deprecations)
+  - [`/scan` Endpoint](#scan-endpoint)
+    - [Differences between `/scan` and `/v2/scan`](#differences-between-scan-and-v2scan)
+  - [centos.Dockerfile](#centosdockerfile)
+- [History](#history)
 - [References](#references)
+
 
 # Introduction
 
@@ -133,12 +142,12 @@ Content-Length: 33
 | `/version` | Returns the clamav binary version and also the version of the virus signature databases and the signature update date. |
 | `/metrics` | Prometheus endpoint for scraping metrics. |
 ## Scanning endpoints  
-| Endpoint | Description | Response sample |
-|----------|-------------|-----------------|
-| `/v2/scan` | Scanning endpoint, accepts a multipart/form-data request with one or more files and returns a json array with status, description and filename, along with most severe status code that was possible to determine. | response sample: `[{"Status":"OK","Description":"","FileName":"checksums.txt"}]` |
-| `/scanPath?path=/folder` | A scanning endpoint that will scan a folder, a practical example would be to mount a share into the container where you dump files in a folder, call scanPath and let it scan them all, then continue processing them | response sample: `[{"Raw":"/folder: OK","Description":"","Path":"/folder","Hash":"","Size":0,"Status":"OK"}]` |
-| `/scanHandlerBody` | This endpoints scans the content in the HTTP POST request body. | response sample: `{OK   200}` |
-| `/scan` | [DEPRECATED] This endpoint scans in a similar manner to `/v2/scan` but does return one or more json objects without a containing structure in between (no json array). It also does not include the filename as a json property. It is still present in the api for backwards compatibility reasons for those who still use it but it will also return headers indicating deprecation and pointing out the new, updated endpoint, `/v2/scan`. It does accept a multipart/form-data endpoint that by http standards can accept multiple files, and does scan them all, but the implementation of the endpoint indicates that it was originally (probably) meant to only scan one file at a time. Please don't rely on this endpoint to exist in the future, the project has an intention to sunset it in the future when it becomes a pain to maintain. | response sample: `{"Status":"OK","Description":""}` |
+| Endpoint | Description |
+|----------|-------------|
+| `/v2/scan` | Scanning endpoint, accepts a multipart/form-data request with one or more files and returns a json array with status, description and filename, along with most severe status code that was possible to determine. <br/>**response sample:** <br/> `[{"Status":"OK","Description":"","FileName":"checksums.txt"}]` |
+| `/scanPath?path=/folder` | A scanning endpoint that will scan a folder, a practical example would be to mount a share into the container where you dump files in a folder, call scanPath and let it scan them all, then continue processing them<br/> **response sample:**<br/> `[{"Raw":"/folder: OK","Description":"","Path":"/folder","Hash":"","Size":0,"Status":"OK"}]` |
+| `/scanHandlerBody` | This endpoints scans the content in the HTTP POST request body. <br/> **response sample:**<br/> `{OK   200}` |
+| `/scan` | [DEPRECATED] This endpoint scans in a similar manner to `/v2/scan` but does return one or more json objects without a containing structure in between (no json array). It also does not include the filename as a json property. It is still present in the api for backwards compatibility reasons for those who still use it but it will also return headers indicating deprecation and pointing out the new, updated endpoint, `/v2/scan`. It does accept a multipart/form-data endpoint that by http standards can accept multiple files, and does scan them all, but the implementation of the endpoint indicates that it was originally (probably) meant to only scan one file at a time. Please don't rely on this endpoint to exist in the future, the project has an intention to sunset it in the future when it becomes a pain to maintain. <br/>**response sample:** <br/>`{"Status":"OK","Description":""}` |
 # Configuration
 
 ## Environment Variables
