@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/ajilach/clamav-rest/actions/workflows/build.yml/badge.svg)](https://github.com/ajilach/clamav-rest/actions)
+[![Build Status](https://github.com/ajilach/clamav-rest/actions/workflows/ci.yaml/badge.svg)](https://github.com/ajilach/clamav-rest/actions/workflows/ci.yaml)
 [![Latest Release](https://img.shields.io/github/v/release/ajilach/clamav-rest)](https://github.com/ajilach/clamav-rest/releases)
 [![License: MIT](https://img.shields.io/github/license/ajilach/clamav-rest)](https://opensource.org/licenses/MIT)
 
