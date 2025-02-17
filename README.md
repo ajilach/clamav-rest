@@ -206,11 +206,11 @@ clamscan --database=/clamav/data --version
 
 [Prometheus metrics](https://prometheus.io/docs/guides/go-application/) were implemented, which can be retrieved from the `/metrics` endpoint:
 
-**HTTP:**
-curl http://localhost:9000/metrics
+**HTTP:**  
+`curl http://localhost:9000/metrics`
 
-**HTTPS:**
-curl https://localhost:9443/metrics
+**HTTPS:**  
+`curl https://localhost:9443/metrics`
 
 Description of the metrics is available at these endpoints as part of the metrics themselves.
 
@@ -218,9 +218,7 @@ Description of the metrics is available at these endpoints as part of the metric
 
 Source code can be found here: https://github.com/ajilach/clamav-rest
 
-[TODO: Can you check whether this makes sense? Sorry, I am not a go developer :) Note: I removed the `# env` part. Is this correct? Can you check my examples to build for macos and windows?]
-
-Building the golang binary locally:
+## Building the golang binary locally:
 
 ```sh
 # For linux on amd64
@@ -233,10 +231,10 @@ GOOS=darwin GOARCH=arm64 go build
 GOOS=darwin GOARCH=amd64 go build
 
 # For Windows (using Git Bash or similar)
-GOOS=windows GOARCH=amd64 go build -o clamav-rest.exe
+GOOS=windows GOARCH=amd64 go build
 ```
 
-Containerizing the application:
+## Containerizing the application:
 
 ```bash
 docker build . -t clamav-rest
