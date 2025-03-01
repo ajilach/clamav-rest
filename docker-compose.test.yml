@@ -1,0 +1,8 @@
+services:
+  clamav-rest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"
+      - "9443:9443"
