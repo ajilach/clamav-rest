@@ -323,7 +323,6 @@ func waitForClamD(port string, times int) {
 }
 
 func main() {
-
 	opts = make(map[string]string)
 
 	// https://github.com/prometheus/client_golang/blob/main/examples/gocollector/main.go
@@ -349,15 +348,17 @@ func main() {
 
 	fmt.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
 
-	http.HandleFunc("/scan", scanHandler)
-	http.HandleFunc("/v2/scan", v2ScanHandler)
-	http.HandleFunc("/scanPath", scanPathHandler)
-	http.HandleFunc("/scanHandlerBody", scanHandlerBody)
-	http.HandleFunc("/version", clamversion)
-	http.HandleFunc("/", home)
+	// Create a new mux for all our routes
+	mux := http.NewServeMux()
+	mux.HandleFunc("/scan", scanHandler)
+	mux.HandleFunc("/v2/scan", v2ScanHandler)
+	mux.HandleFunc("/scanPath", scanPathHandler)
+	mux.HandleFunc("/scanHandlerBody", scanHandlerBody)
+	mux.HandleFunc("/version", clamversion)
+	mux.HandleFunc("/", home)
 
 	// Prometheus metrics
-	http.Handle("/metrics", promhttp.HandlerFor(
+	mux.Handle("/metrics", promhttp.HandlerFor(
 		reg,
 		promhttp.HandlerOpts{
 			// Opt into OpenMetrics to support exemplars.
@@ -365,9 +366,27 @@ func main() {
 		},
 	))
 
+	// Configure the HTTPS server
+	tlsServer := &http.Server{
+		Addr:    fmt.Sprintf(":%s", opts["SSL_PORT"]),
+		Handler: mux,
+	}
+
+	// Configure the HTTP server with h2c support
+	var protocols http.Protocols
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true) // Enable h2c support
+	protocols.SetHTTP2(true)
+
+	httpServer := &http.Server{
+		Addr:      fmt.Sprintf(":%s", opts["PORT"]),
+		Handler:   mux,
+		Protocols: &protocols,
+	}
+
 	// Start the HTTPS server in a goroutine
-	go http.ListenAndServeTLS(fmt.Sprintf(":%s", opts["SSL_PORT"]), "/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key", nil)
+	go tlsServer.ListenAndServeTLS("/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key")
 
 	// Start the HTTP server
-	http.ListenAndServe(fmt.Sprintf(":%s", opts["PORT"]), nil)
+	httpServer.ListenAndServe()
 }
