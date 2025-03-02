@@ -173,6 +173,7 @@ Below is the complete list of available options that can be used to customize yo
 | `PCRE_MATCHLIMIT`     | Maximum PCRE match calls. Defaults to `100000`                                                          |
 | `PCRE_RECMATCHLIMIT`  | Maximum recursive match calls to PCRE. Defaults to `2000`                                               |
 | `SIGNATURE_CHECKS`    | How many times per day to check for a new database signature. Must be between 1 and 50. Defaults to `2` |
+| `ALLOW_ORIGINS`       | A semicolon (`;`) split string of allowed origins. Defaults to `*`                                       |
 
 ## Networking
 
