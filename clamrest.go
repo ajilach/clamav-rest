@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/cors"
 )
 
 var opts map[string]string
@@ -85,6 +86,8 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	paths, ok := r.URL.Query()["path"]
 	if !ok || len(paths[0]) < 1 {
 		log.Println("Url Param 'path' is missing")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("URL param 'path' is missing"))
 		return
 	}
 
@@ -185,7 +188,7 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 				eachResp := scanResponse{Status: s.Status, Description: s.Description}
 				if version == 2 {
 					eachResp.FileName = part.FileName()
-					fmt.Printf("scanned file %v", part.FileName())
+					fmt.Printf("%v Scanned file %v\n", time.Now().Format(time.RFC3339), part.FileName())
 				}
 				//Set each possible status and then send the most appropriate one
 				eachResp.httpStatus = getHttpStatusByClamStatus(s)
@@ -198,14 +201,14 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 		if version == 2 {
 			jsonRes, jErr := json.Marshal(resp)
 			if jErr != nil {
-				fmt.Printf("Error marshalling json, %v\n", jErr)
+				fmt.Printf("%v Error marshalling json, %v\n", time.Now().Format(time.RFC3339), jErr)
 			}
 			fmt.Fprint(w, string(jsonRes))
 		} else {
 			for _, v := range resp {
 				jsonRes, jErr := json.Marshal(v)
 				if jErr != nil {
-					fmt.Printf("Error marshalling json, %v\n", jErr)
+					fmt.Printf("%v Error marshalling json, %v\n", time.Now().Format(time.RFC3339), jErr)
 				}
 				fmt.Fprint(w, string(jsonRes))
 			}
@@ -279,10 +282,10 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
 		resp := scanResponse{Status: clamd.RES_PARSE_ERROR, Description: "File size limit exceeded"}
-		fmt.Printf("%v Clamd returned error, broken pipe and closed connection can indicate too large file, %v", time.Now().Format(time.RFC3339), err)
+		fmt.Printf("%v Clamd returned error, broken pipe and closed connection can indicate too large file, %v\n", time.Now().Format(time.RFC3339), err)
 		jsonResp, jErr := json.Marshal(resp)
 		if jErr != nil {
-			fmt.Printf("%v Error marshalling json, %v", time.Now().Format(time.RFC3339), jErr)
+			fmt.Printf("%v Error marshalling json, %v\n", time.Now().Format(time.RFC3339), jErr)
 		}
 		fmt.Fprint(w, string(jsonResp))
 		return
@@ -308,16 +311,16 @@ func waitForClamD(port string, times int) {
 
 	if err != nil {
 		if times < 30 {
-			fmt.Printf("clamD not running, waiting times [%v]\n", times)
+			fmt.Printf("%v clamD not running, waiting times [%v]\n", time.Now().Format(time.RFC3339), times)
 			time.Sleep(time.Second * 4)
 			waitForClamD(port, times+1)
 		} else {
-			fmt.Printf("Error getting clamd version: %v\n", err)
+			fmt.Printf("%v Error getting clamd version: %v\n", time.Now().Format(time.RFC3339), err)
 			os.Exit(1)
 		}
 	} else {
 		for version_string := range version {
-			fmt.Printf("Clamd version: %#v\n", version_string.Raw)
+			fmt.Printf("%v Clamd version: %#v\n", time.Now().Format(time.RFC3339), version_string.Raw)
 		}
 	}
 }
@@ -348,26 +351,52 @@ func main() {
 	waitForClamD(opts["CLAMD_PORT"], 1)
 
 	fmt.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
+	mux := http.NewServeMux()
+	//Add cors middleware
+	c := cors.New(getCorsPolicy())
 
-	http.HandleFunc("/scan", scanHandler)
-	http.HandleFunc("/v2/scan", v2ScanHandler)
-	http.HandleFunc("/scanPath", scanPathHandler)
-	http.HandleFunc("/scanHandlerBody", scanHandlerBody)
-	http.HandleFunc("/version", clamversion)
-	http.HandleFunc("/", home)
+	mux.HandleFunc("POST /scan", scanHandler)
+	mux.HandleFunc("POST /v2/scan", v2ScanHandler)
+	mux.HandleFunc("GET /scanPath", scanPathHandler)
+	mux.HandleFunc("POST /scanHandlerBody", scanHandlerBody)
+	mux.HandleFunc("GET /version", clamversion)
+	mux.HandleFunc("GET /", home)
 
 	// Prometheus metrics
-	http.Handle("/metrics", promhttp.HandlerFor(
+	mux.Handle("GET /metrics", promhttp.HandlerFor(
 		reg,
 		promhttp.HandlerOpts{
 			// Opt into OpenMetrics to support exemplars.
 			EnableOpenMetrics: true,
 		},
 	))
-
+	//Attach the cors middleware to the middleware chain/request pipeline
+	handler := c.Handler(mux)
 	// Start the HTTPS server in a goroutine
-	go http.ListenAndServeTLS(fmt.Sprintf(":%s", opts["SSL_PORT"]), "/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key", nil)
-
+	go func() {
+		log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%s", opts["SSL_PORT"]), "/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key", handler))
+	}()
 	// Start the HTTP server
-	http.ListenAndServe(fmt.Sprintf(":%s", opts["PORT"]), nil)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", opts["PORT"]), handler))
+}
+
+func getCorsPolicy() cors.Options {
+	envs := os.Environ()
+	var allow_origins []string
+
+	for _, env := range envs {
+		e := strings.Split(env, "=")
+		if strings.EqualFold(e[0], "allow_origins") {
+			allow_origins = strings.Split(e[1], ";")
+		}
+	}
+	if len(allow_origins) == 0 {
+		allow_origins = []string{"*"}
+	}
+	return cors.Options{
+		AllowedOrigins:   allow_origins,
+		AllowedHeaders:   []string{"Content-Type", "Accept-Language", "Accept"},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+		AllowCredentials: false,
+	}
 }
