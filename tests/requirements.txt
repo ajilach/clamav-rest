@@ -5,6 +5,6 @@ enum34==1.0.4
 parse>=1.19.0
 parse-type>=0.6.0
 requests>=2.31.0
-httpx>=0.28.1
+httpx[http2]>=0.28.1
 urllib3>=2.0.0
 cryptography>=41.0.0

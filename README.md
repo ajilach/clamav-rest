@@ -287,9 +287,12 @@ date: Fri, 28 Feb 2025 21:49:33 GMT
 Some very quick notes about running the python tests:
 
 - Create a virtual environment (e.g. `python -m venv pyenv`)
+- Activate the environment (`source pyenv/bin/activate` for linux/macOS)
 - Install packages (`pip install -r tests/requirements.txt`)
-- Start `docker-compose.test.yml`, or otherwise run clamav-rest locally.
+- Run clam-av locally (`docker compose -f 'docker-compose.test.yml' up -d --build`).
 - Run tests `behave tests/features`
+
+You can then deactivate the python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
 
 ## Updates
 
