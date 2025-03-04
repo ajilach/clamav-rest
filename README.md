@@ -243,6 +243,57 @@ docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest clamav-rest
 
 Note that the `docker build` command also takes care of compiling the source. Therefore you do not need to perform the manual build steps from above nor do you need a local go development environment.
 
+## Protocol Support
+
+Go 1.24 added unencrypted "HTTP/2 with Prior Knowledge" support into the `net/http` standard library, which is useful for microservices behind firewalls and load balancers.
+
+Simple checks on the docker container running locally:
+
+```bash
+$ curl -i -k --http1.1 -F "file=@clamrest.go" https://localhost:9443/v2/scan
+
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Date: Fri, 28 Feb 2025 21:49:54 GMT
+Content-Length: 59
+
+[{"Status":"OK","Description":"","FileName":"clamrest.go"}]
+```
+
+```bash
+$ curl -i -k --http2-prior-knowledge -F "file=@clamrest.go" http://localhost:9000/v2/scan
+
+HTTP/2 200 
+content-type: application/json; charset=utf-8
+content-length: 59
+date: Fri, 28 Feb 2025 21:49:17 GMT
+
+[{"Status":"OK","Description":"","FileName":"clamrest.go"}]
+```
+
+```bash
+$ curl -i -k --http2 -F "file=@clamrest.go" https://localhost:9443/v2/scan
+
+HTTP/2 200 
+content-type: application/json; charset=utf-8
+content-length: 59
+date: Fri, 28 Feb 2025 21:49:33 GMT
+
+[{"Status":"OK","Description":"","FileName":"clamrest.go"}]
+```
+
+## Python Tests
+
+Some very quick notes about running the python tests:
+
+- Create a virtual environment (e.g. `python -m venv pyenv`)
+- Activate the environment (`source pyenv/bin/activate` for linux/macOS)
+- Install packages (`pip install -r tests/requirements.txt`)
+- Run clam-av locally (`docker compose -f 'docker-compose.test.yml' up -d --build`).
+- Run tests `behave tests/features`
+
+You can then deactivate the python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
+
 ## Updates
 
 2025-02-07: Improved documentation.
