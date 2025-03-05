@@ -395,7 +395,7 @@ func main() {
 		log.Fatal(tlsServer.ListenAndServeTLS("/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key"))
 	}()
 	// Start the HTTP server
-	log.Fatal(httpServeListenAndServe())
+	log.Fatal(httpServer.ListenAndServe())
 }
 
 func getCorsPolicy() cors.Options {
