@@ -402,15 +402,15 @@ func getCorsPolicy() cors.Options {
 	envs := os.Environ()
 	var allow_origins []string
 
+	// Only allow same-origin requests by default
+	// This effectively disables CORS when no origins are explicitly allowed
 	for _, env := range envs {
 		e := strings.Split(env, "=")
 		if strings.EqualFold(e[0], "allow_origins") {
 			allow_origins = strings.Split(e[1], ";")
 		}
 	}
-	if len(allow_origins) == 0 {
-		allow_origins = []string{"*"}
-	}
+	
 	return cors.Options{
 		AllowedOrigins:   allow_origins,
 		AllowedHeaders:   []string{"Content-Type", "Accept-Language", "Accept"},
