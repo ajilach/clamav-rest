@@ -1,0 +1,16 @@
+#!/bin/sh
+
+
+until curl -s -f -o /dev/null "http://localhost:9000/"
+do
+  echo "Tests are waiting for the rest bridge to start..."
+  sleep 5
+done
+echo "preparing to run tests"
+python3 -m venv /tmp/pyenv
+source /tmp/pyenv/bin/activate
+pip install -r tests/requirements.txt
+res=$(behave tests/features)
+echo "$res"
+numberOfFailedSteps=$(echo "$res" | awk '/[0-9]+\ssteps\spassed,\s[0-9]+\sfailed/ {print $4}') 
+exit $(($numberOfFailedSteps))
