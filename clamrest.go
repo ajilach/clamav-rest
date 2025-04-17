@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -301,16 +302,16 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func waitForClamD(port string, times int) {
+func waitForClamD(port string, times int, maxTimes int) {
 	clamdTest := clamd.NewClamd(port)
 	clamdTest.Ping()
 	version, err := clamdTest.Version()
 
 	if err != nil {
-		if times < 30 {
+		if times < maxTimes {
 			fmt.Printf("clamD not running, waiting times [%v]\n", times)
 			time.Sleep(time.Second * 4)
-			waitForClamD(port, times+1)
+			waitForClamD(port, times+1, maxTimes)
 		} else {
 			fmt.Printf("Error getting clamd version: %v\n", err)
 			os.Exit(1)
@@ -344,7 +345,14 @@ func main() {
 
 	fmt.Printf("Starting clamav rest bridge\n")
 	fmt.Printf("Connecting to clamd on %v\n", opts["CLAMD_PORT"])
-	waitForClamD(opts["CLAMD_PORT"], 1)
+
+	maxReconnect, err := strconv.Atoi(opts["MAX_RECONNECT_TIME"])
+
+	if err != nil {
+		fmt.Println("Error converting MAX_RECONNECT_TIME to integer:", err)
+	}
+
+	waitForClamD(opts["CLAMD_PORT"], 1, maxReconnect)
 
 	fmt.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
 
