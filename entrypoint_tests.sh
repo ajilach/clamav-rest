@@ -1,8 +1,4 @@
 #!/bin/bash
-runTests=false
-if [ "$1" = "test" ]; then
-    runTests=true
-fi
 cp /etc/clamav/* /clamav/etc/
 
 # Replace values in freshclam.conf
@@ -49,46 +45,27 @@ if [ -z "$(ls -A /clamav/data)" ]; then
   cp /var/lib/clamav/* /clamav/data/
 fi
 exitcode=0
-output=$(
+(
     freshclam --config-file=/clamav/etc/freshclam.conf --daemon &
     clamd --config-file=/clamav/etc/clamd.conf &
     /usr/bin/clamav-rest &
     
-    if [ "$runTests" == true ]; then
-        echo "Will run test and then exit"
-        /opt/clamav-rest/run-tests 
-        # the exit code from `run-tests` is the numberOfFailedSteps
-        res=$?
-        # terminate the other processes of the container.
-        terminate
-        # the value of $exitcode set in the terminate function is not used because we want 
-        # the result of the tests to determine the exit of the container when running tests.
-        # If no tests have failed, the exit code should be 0
-        exitcode=$res
-        echo "number of failed test and exit code: $exitcode"
-        exit $exitcode
-    else 
-        # Force reload the virus database through the clamd socket after 120s.
-        # Starting freshclam and clamd async ends up that a newer database version is loaded with
-        # freshclam, but the clamd still keep the old version existing before the update because 
-        # the socket from clamd is not yet ready to inform, what is indicated in the log
-        # during the startup of the container (WARNING: Clamd was NOT notified: Can't connect to clamd through /run/clamav/clamd.sock: No such file or directory).
-        # So only if a newer database version is available clamd will be notified next time, and this can take hours/days.
-        # Remarks: The socket port is configured in the .Dockerfile itself.
-        sleep 120s
-        echo RELOAD | nc 127.0.0.01 3310 &
-    fi
+   
+    echo "Will run test and then exit"
+    /opt/clamav-rest/run-tests 
+    # the exit code from `run-tests` is the numberOfFailedSteps
+    res=$?
+    # terminate the other processes of the container.
+    terminate
+    # the value of $exitcode set in the terminate function is not used because we want 
+    # the result of the tests to determine the exit of the container when running tests.
+    # If no tests have failed, the exit code should be 0
+    exitcode=$res
+    echo "number of failed tests and exit code: $exitcode"
+    exit $exitcode
 )
 # Capture exit code from the sub shell to use it when exiting the container.    
 exitcode=$? 
 
-echo "$output" | tee -a /var/log/clamav/clamav.log
-# if we have run tests, don't terminate CHLD, just exit.
-if [ "$runTests" == true ]; then
-    exit $exitcode
-fi
-trap terminate CHLD
-echo "waiting to finish"
-wait
 
 exit $exitcode

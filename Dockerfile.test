@@ -66,6 +66,7 @@ ENV MAX_SCRIPTNORMALIZE=5M
 ENV MAX_ZIPTYPERCG=1M
 ENV MAX_PARTITIONS=50
 ENV MAX_ICONSPE=100
+ENV MAX_RECONNECT_TIME=30
 ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
 ENV SIGNATURE_CHECKS=2
@@ -79,7 +80,6 @@ USER clamav
 WORKDIR /opt/clamav-rest
 COPY . .
 ADD --chmod=0755 ./run-tests .
-#RUN chmod +x run-tests && chmod +x entrypoint.sh && ls -l 
-RUN echo "executing: /opt/clamav-rest/entrypoint_test.sh test"
+
 ENTRYPOINT [ "/opt/clamav-rest/entrypoint_tests.sh" ]
 CMD [ "test" ]
