@@ -1,6 +1,6 @@
 #!/bin/bash
 runTests=false
-if [ "$1" = test ]; then
+if [ "$1" = "test" ]; then
     runTests=true
 fi
 cp /etc/clamav/* /clamav/etc/
@@ -89,6 +89,6 @@ if [ "$runTests" == true ]; then
 fi
 trap terminate CHLD
 echo "waiting to finish"
-#wait
+wait
 
 exit $exitcode
