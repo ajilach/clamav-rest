@@ -52,6 +52,13 @@ spec:
             port: 9443
           initialDelaySeconds: 30
           periodSeconds: 60
+        #volumeMounts:
+        #  - name: clamav-data
+        #    mountPath: /clamav/data
+      #volumes:
+      #  - name: clamav-data
+      #    persistentVolumeClaim:
+      #      claimName: my-pvc
       tolerations:
       - key: "node.kubernetes.io/unreachable"
         operator: "Exists"
