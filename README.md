@@ -185,6 +185,10 @@ Below is the complete list of available options that can be used to customize yo
 | `9000` | HTTP REST listening port                 |
 | `9443` | HTTPS REST listening port                |
 
+## Running on Kubernetes
+Please refer to the `kubernetes_example` folder on how to configure the service.  
+A commented way to mount a data directory from a pvc has been added.  
+
 # Maintenance / Monitoring
 
 ## Shell Access
