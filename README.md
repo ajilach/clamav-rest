@@ -287,7 +287,22 @@ date: Fri, 28 Feb 2025 21:49:33 GMT
 [{"Status":"OK","Description":"","FileName":"clamrest.go"}]
 ```
 
-## Python Tests
+## Running Tests
+
+We provide two ways for you to run the test suite: either through a Docker container or through Python. The Docker way does not have any requirements for your local system other than Docker or Podman while the Python way on the other hand makes it easier to debug and investigate the tests in your local environment.
+
+### Running tests in a container
+
+This is the preferred way. Building with `Dockerfile.test` and running the container will start `clamav` and `clamav-rest`, then run the aforementioned python tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exitcode of zero is emitted.
+
+Example on how to build and run the tests:
+
+```sh
+docker build -f Dockerfile.test -t clamav-rest-test .
+docker run clamav-rest-test
+```
+
+### Running tests with Python locally
 
 Some very quick notes about running the python tests:
 
@@ -297,18 +312,7 @@ Some very quick notes about running the python tests:
 - Run clam-av locally (`docker compose -f 'docker-compose.test.yml' up -d --build`).
 - Run tests `behave tests/features`
 
-You can then deactivate the python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
-
-### Running tests in a container
-
-Building with `Dockerfile.test` and running it will start clamav and clamav-rest and then run the aforementioned python tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exitcode of zero is emitted.
-
-Example on how to build and run tests:
-
-```sh
-docker build -f Dockerfile.test -t clamav-rest-test .
-docker run clamav-rest-test
-```
+You can then deactivate the Python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
 
 ## Updates
 
