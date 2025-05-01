@@ -301,12 +301,15 @@ You can then deactivate the python environment with `deactivate`, and shutdown t
 
 ### Running tests in a container
 
-Building with `Dockerfile.test` and running it will start clamav and clamav-rest and then run the aforementioned python tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exitcode of zero is emitted.  
-Example on how to build and run tests:  
-```bash
-docker build . -f Dockerfile.test -t clamav-rest:test
-docker run clamav-rest:test
+Building with `Dockerfile.test` and running it will start clamav and clamav-rest and then run the aforementioned python tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exitcode of zero is emitted.
+
+Example on how to build and run tests:
+
+```sh
+docker build -f Dockerfile.test -t clamav-rest-test .
+docker run clamav-rest-test
 ```
+
 ## Updates
 
 2025-02-07: Improved documentation.
