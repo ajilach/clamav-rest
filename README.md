@@ -296,6 +296,8 @@ You can then deactivate the python environment with `deactivate`, and shutdown t
 
 ## Updates
 
+2025-05-01: [PR 54](https://github.com/ajilach/clamav-rest/pull/54) CORS Support added and test suite added to verify proper functioning thanks to some long nights from [arizon-dread](https://github.com/arizon-dread).
+
 2025-02-07: Improved documentation.
 
 2025-01-08: [PR 50](https://github.com/ajilach/clamav-rest/pull/50) integrated which now provides a new `/v2` endpoint returning more scan result information: status, description, http status and a list of scanned files. See the PR for more details. The old `/scan` endpoint is now considered deprecated. Also, a file size scan limit has been added which can be configured through the `MAX_FILE_SIZE` environment variable. This update also fixes a bug that would falsely return `200 OK` if the first file in a multi file scan was clean, regardless if any of the following files contained viruses. All endpoints now increment the Prometheus virus metric counter when a virus is discovered during a scan.
