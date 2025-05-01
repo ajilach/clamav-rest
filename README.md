@@ -132,6 +132,10 @@ Content-Length: 33
 - 422 - Filename is missing in MimePart
 - 501 - Unknown request
 
+## Security considerations
+
+In order to remain backward compatible, we allow all CORS related origins by setting `ALLOW_ORIGINS` to `*`. Please change is to a list of allowed origins or to blank for only allowing same origin requests for increased security. See the [Configuration Section](#configuration) below for more details on `ALLOW_ORIGINS`.
+
 # Endpoints
 
 ## Utility endpoints
@@ -170,6 +174,7 @@ Below is the complete list of available options that can be used to customize yo
 | `MAX_ZIPTYPERCG`      | Maximum size of ZIP to reanalyze type recognition. Defaults to `1M`                                     |
 | `MAX_PARTITIONS`      | How many partitions per raw disk to scan. Defaults to `50`                                              |
 | `MAX_ICONSPE`         | How many icons in PE to scan. Defaults to `100`                                                         |
+| `MAX_RECONNECT_TIME`  | Maximum timeout while waiting for ClamAV to start. Defaults to `30`                                     |
 | `PCRE_MATCHLIMIT`     | Maximum PCRE match calls. Defaults to `100000`                                                          |
 | `PCRE_RECMATCHLIMIT`  | Maximum recursive match calls to PCRE. Defaults to `2000`                                               |
 | `SIGNATURE_CHECKS`    | How many times per day to check for a new database signature. Must be between 1 and 50. Defaults to `2` |
@@ -282,7 +287,22 @@ date: Fri, 28 Feb 2025 21:49:33 GMT
 [{"Status":"OK","Description":"","FileName":"clamrest.go"}]
 ```
 
-## Python Tests
+## Running Tests
+
+We provide two ways for you to run the test suite: either through a Docker container or through Python. The Docker way does not have any requirements for your local system other than Docker or Podman while the Python way on the other hand makes it easier to debug and investigate the tests in your local environment.
+
+### Running tests in a container
+
+This is the preferred way. Building with `Dockerfile.test` and running the container will start `clamav` and `clamav-rest`, then run the aforementioned python tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exitcode of zero is emitted.
+
+Example on how to build and run the tests:
+
+```sh
+docker build -f Dockerfile.test -t clamav-rest-test .
+docker run clamav-rest-test
+```
+
+### Running tests with Python locally
 
 Some very quick notes about running the python tests:
 
@@ -292,7 +312,7 @@ Some very quick notes about running the python tests:
 - Run clam-av locally (`docker compose -f 'docker-compose.test.yml' up -d --build`).
 - Run tests `behave tests/features`
 
-You can then deactivate the python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
+You can then deactivate the Python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
 
 ## Updates
 

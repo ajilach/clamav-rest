@@ -10,7 +10,7 @@ WORKDIR /go/src
 ADD . /go/src/clamav-rest/
 RUN cd /go/src/clamav-rest && go mod tidy && go build -v
 
-FROM alpine:3.21
+FROM docker.io/python:3-alpine3.21
 
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
@@ -32,7 +32,8 @@ ADD ./server.* /etc/ssl/clamav-rest/
 RUN apk --no-cache add clamav clamav-libunrar \
     && mkdir /run/clamav \
     && chown clamav:clamav /run/clamav 
-
+# cURL added for tests. Comment this out in production
+RUN apk --no-cache add curl
 
 # Configure clamAV to run in foreground with port 3310
 RUN sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/clamd.conf \
@@ -73,4 +74,12 @@ ENV ALLOW_ORIGINS=*
 
 USER clamav
 
-ENTRYPOINT [ "entrypoint.sh" ]
+
+#FROM docker.io/python:3-alpine
+
+WORKDIR /opt/clamav-rest
+COPY . .
+ADD --chmod=0755 ./run-tests .
+
+ENTRYPOINT [ "/opt/clamav-rest/entrypoint_tests.sh" ]
+CMD [ "test" ]
