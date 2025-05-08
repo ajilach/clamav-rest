@@ -225,7 +225,7 @@ Source code can be found here: https://github.com/ajilach/clamav-rest
 
 ## Building the golang binary locally:
 
-```sh
+```bash
 # For linux on amd64
 GOOS=linux GOARCH=amd64 go build
 
