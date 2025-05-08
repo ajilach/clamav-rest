@@ -37,6 +37,9 @@ spec:
           requests:
             cpu: 100m
             memory: 2000Mi
+          limits:
+            cpu: 200m
+            memory: 2500Mi
         readinessProbe:
           httpGet:
             scheme: HTTPS
@@ -52,6 +55,14 @@ spec:
             port: 9443
           initialDelaySeconds: 30
           periodSeconds: 60
+      # optional: persisting the data directory
+      #   volumeMounts:
+      #   - name: clamav-data
+      #     mountPath: /clamav/data
+      # volumes:
+      # - name: clamav-data
+      #   persistentVolumeClaim:
+      #     claimName: my-pvc
       tolerations:
       - key: "node.kubernetes.io/unreachable"
         operator: "Exists"

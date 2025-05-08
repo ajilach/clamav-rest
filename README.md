@@ -189,6 +189,10 @@ Below is the complete list of available options that can be used to customize yo
 | `9000` | HTTP REST listening port                 |
 | `9443` | HTTPS REST listening port                |
 
+## Running on Kubernetes
+Please refer to the `kubernetes_example/` folder on how to configure the service.  
+A way to mount a data directory from a pvc has been added to the manifest. Uncomment it to use it.  
+
 # Maintenance / Monitoring
 
 ## Shell Access
@@ -225,7 +229,7 @@ Source code can be found here: https://github.com/ajilach/clamav-rest
 
 ## Building the golang binary locally:
 
-```sh
+```bash
 # For linux on amd64
 GOOS=linux GOARCH=amd64 go build
 
