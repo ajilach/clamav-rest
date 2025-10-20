@@ -10,7 +10,7 @@ WORKDIR /go/src
 ADD . /go/src/clamav-rest/
 RUN cd /go/src/clamav-rest && go mod tidy && go build -v
 
-FROM alpine:3.21
+FROM alpine:3.22
 
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
