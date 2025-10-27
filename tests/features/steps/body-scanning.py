@@ -16,10 +16,4 @@ def step_impl(context):
 
 @then('I get a http status of "{status}" from /scanHandlerBody')
 def step_impl(context, status):
-	#print("status var type: ")
-	#print(type(status))
-	#print("status var content: "+status)
-	#print("response status type: ")
-	#print(type(context.result.status_code))
-	#print("response status: "+str(context.result.status_code))
-	assert_that(int(status), equal_to(context.result.status_code))
+	assert_that(context.result.status_code, equal_to(int(status)))
