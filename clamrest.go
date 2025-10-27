@@ -84,6 +84,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func scanPathHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("url query: " + r.URL.RawQuery)
 	paths, ok := r.URL.Query()["path"]
 	if !ok || len(paths[0]) < 1 {
 		log.Println("Url Param 'path' is missing")
@@ -96,6 +97,7 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 
 	c := clamd.NewClamd(opts["CLAMD_PORT"])
 	response, err := c.AllMatchScanFile(path)
+	//response, err := c.ContScanFile(path)
 
 	if err != nil {
 		errJson, eErr := json.Marshal(err)
