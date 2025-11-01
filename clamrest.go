@@ -33,7 +33,6 @@ func clamversion(w http.ResponseWriter, r *http.Request) {
 	c := clamd.NewClamd(opts["CLAMD_PORT"])
 
 	version, err := c.Version()
-
 	if err != nil {
 		errJson, eErr := json.Marshal(err)
 		if eErr != nil {
@@ -63,7 +62,6 @@ func home(w http.ResponseWriter, r *http.Request) {
 	c := clamd.NewClamd(opts["CLAMD_PORT"])
 
 	response, err := c.Stats()
-
 	if err != nil {
 		errJson, eErr := json.Marshal(err)
 		if eErr != nil {
