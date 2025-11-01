@@ -9,12 +9,14 @@ def step_imp(context, contents):
 @when('I scan the path for a virus')
 def step_impl(context): 
 	#files = {'file': context.file_contents}
-	url = context.clamrest
-	r = requests.get(url + "?"+ context.query_param)
+	baseUrl = context.clamrest
+	url = baseUrl + "/scanPath?" + str(context.query_param)
+	print(url)
+	r = requests.get(url)
 	context.result = r
 
 @then('I get a http status of "{status}" from scanPath')
 def step_impl(context, status):
-    print("status: "+ status)
-    print("context status: "+ str(context.result.status_code))
-    assert_that(context.result.status_code, equal_to(int(status)))
+	print("status: "+ status)
+	print("context status: "+ str(context.result.status_code))
+	assert_that(context.result.status_code, equal_to(int(status)))

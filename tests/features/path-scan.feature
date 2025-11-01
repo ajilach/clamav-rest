@@ -6,6 +6,6 @@ Feature: testing virus scanning through rest API
 	Then I get a http status of <status> from scanPath
 
     Examples: virus_files
-    | content                             | status |
-    | "path=/clamav/test/ok/test.txt"     | "200"  |
-    | "path=/clamav/test/virus/eicar.txt" | "406"  |
+    | content                            | status |
+    | "path=/clamav/tmp/ok"              | "200"  |
+    | "path=/clamav/tmp/virus"           | "406"  |
