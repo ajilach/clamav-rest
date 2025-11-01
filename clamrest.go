@@ -87,7 +87,10 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok || len(paths[0]) < 1 {
 		log.Println("Url Param 'path' is missing")
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("URL param 'path' is missing"))
+		_, err := w.Write([]byte("URL param 'path' is missing"))
+		if err != nil {
+			fmt.Printf("unable to write error msg to client, %v\n", err)
+		}
 		return
 	}
 
