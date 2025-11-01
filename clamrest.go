@@ -110,12 +110,14 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var scanResults []*clamd.ScanResult
+	scanResults := []scanResponse{}
 	for responseItem := range response {
+		eachResp := scanResponse{Status: responseItem.Status, Description: responseItem.Description}
+		eachResp.httpStatus = getHttpStatusByClamStatus(responseItem)
 		if responseItem.Status == clamd.RES_FOUND {
 			noOfFoundViruses.Inc()
 		}
-		scanResults = append(scanResults, responseItem)
+		scanResults = append(scanResults, eachResp)
 	}
 
 	resJson, eRes := json.Marshal(scanResults)
@@ -123,6 +125,7 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(eRes)
 		return
 	}
+	w.WriteHeader(getResponseStatus(scanResults))
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	fmt.Fprint(w, string(resJson))
 }
