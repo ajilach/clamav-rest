@@ -52,6 +52,11 @@ RUN chown -R clamav:clamav /clamav \
     && chown -R clamav:clamav /var/log/clamav \
     && chown -R clamav:clamav /run/clamav 
 
+# Add test data to test the /scanPath endpoint
+RUN mkdir -p /clamav/tmp/ok /clamav/tmp/virus && \
+echo 'hello world' > /clamav/tmp/ok/test.txt
+
+COPY eicar.test /clamav/tmp/virus/
 
 ENV PORT=9000
 ENV SSL_PORT=9443
