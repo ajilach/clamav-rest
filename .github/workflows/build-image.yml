@@ -13,8 +13,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     
-    # This is the most important part!
-    # You MUST grant write permissions for packages to the GITHUB_TOKEN
+    # grant write permissions for packages to the GITHUB_TOKEN
     permissions:
       contents: read
       packages: write
@@ -27,7 +26,6 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          # Use the GITHUB_TOKEN, which is automatically provided
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
