@@ -1,0 +1,48 @@
+name: &name clamav-rest
+environment: &environment staging
+namespace: &namespace open-vsx-org
+host: clamav-rest-staging.open-vsx.org
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/eclipsefdn/clamav-rest
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# following https://docs.clamav.net/manual/Installing/Docker.html guidelines
+resources:
+  requests:
+    cpu: 500m
+    memory: 3Gi
+  limits:
+    cpu: 1
+    memory: 4Gi
+
+route:
+  timeout: 30s
+
+service:
+  type: ClusterIP
+  port: 9000
+  targetPort: 9000
+  port_tls: 9000
+  targetPort: 9000
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: clamav-rest.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - hosts:
+    #     - clamav-rest.local
+    #   secretName: clamav-rest-tls

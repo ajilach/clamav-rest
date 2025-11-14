@@ -1,0 +1,6 @@
+apiVersion: v2
+name: clamav-rest
+description: ClamAV REST API (ajilach/clamav-rest) Helm chart
+type: application
+version: 0.1.0
+appVersion: "latest"

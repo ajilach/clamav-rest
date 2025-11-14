@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.name }}
+    environment: {{ .Values.environment }}
+  name: {{ .Values.name }}-{{ .Values.environment }}
+  namespace: {{ .Values.namespace }}-{{ .Values.environment }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "clamav-rest.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "clamav-rest.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Values.name }}-{{ .Values.environment }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+            - name: https
+              containerPort: 9443
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          - mountPath: /run/clamav
+            name: run-dir
+          - mountPath: /clamav/data
+            name: clamav-data
+          - mountPath: /clamav/etc
+            name: clamav-etc
+          - mountPath: /clamav/tmp
+            name: tmp-dir
+          - mountPath: /var/log/clamav
+            name: log-dir
+      volumes:
+      - emptyDir: {}
+        name: clamav-data
+      - emptyDir: {}
+        name: clamav-etc
+      - emptyDir: {}
+        name: run-dir
+      - emptyDir: {}
+        name: log-dir
+      - emptyDir: {}
+        name: tmp-dir
+  
