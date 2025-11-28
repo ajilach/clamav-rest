@@ -98,7 +98,6 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 
 	c := clamd.NewClamd(opts["CLAMD_PORT"])
 	response, err := c.AllMatchScanFile(path)
-	// response, err := c.ContScanFile(path)
 	if err != nil {
 		errJson, eErr := json.Marshal(err)
 		if eErr != nil {
