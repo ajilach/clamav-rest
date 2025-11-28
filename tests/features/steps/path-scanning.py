@@ -8,7 +8,6 @@ def step_imp(context, contents):
 
 @when('I scan the path for a virus')
 def step_impl(context): 
-	#files = {'file': context.file_contents}
 	baseUrl = context.clamrest
 	url = baseUrl + "/scanPath?" + str(context.query_param)
 	print(url)
