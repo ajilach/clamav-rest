@@ -8,4 +8,4 @@ Feature: testing virus scanning through rest API
     Examples: body_clean
     | content                                                                | status |
     | "hello_world"                                                          | "200"  |
-	  | "X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*" | "406"  |
+	| "X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*" | "406"  |
