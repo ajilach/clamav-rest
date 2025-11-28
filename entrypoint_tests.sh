@@ -29,7 +29,8 @@ sed -i 's/^#PCRERecMatchLimit .*$/PCRERecMatchLimit '"$PCRE_RECMATCHLIMIT"'/g' /
 mkdir -p /clamav/test/ok /clamav/test/virus
 echo 'hello world' > /clamav/test/ok/test.txt
 echo -n 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > /clamav/test/virus/eicar.txt
-#define function to terminate the container
+
+# Define function to terminate the container
 terminate () {
     pids=`jobs -p`
     for pid in $pids; do
