@@ -8,7 +8,6 @@ def step_imp(context, contents):
 
 @when('I POST the content to /scanHandlerBody to scan the content for a virus')
 def step_impl(context): 
-	#files = {'file': context.file_contents}
 	body = context.body
 	url = context.clamrest
 	r = requests.post(url + "/scanHandlerBody", data=body)
