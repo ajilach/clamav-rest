@@ -130,10 +130,10 @@ The release process is fully automated:
 
 After release, images are available as:
 
-- `ajilach/clamav-rest:1.2.3` - Specific version
-- `ajilach/clamav-rest:1.2` - Minor version (auto-updated)
-- `ajilach/clamav-rest:1` - Major version (auto-updated)
-- `ajilach/clamav-rest:latest` - Latest stable release
+- `ajilaag/clamav-rest:1.2.3` - Specific version
+- `ajilaag/clamav-rest:1.2` - Minor version (auto-updated)
+- `ajilaag/clamav-rest:1` - Major version (auto-updated)
+- `ajilaag/clamav-rest:latest` - Latest stable release
 
 ## 🧪 Testing
 
