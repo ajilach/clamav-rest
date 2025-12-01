@@ -42,9 +42,11 @@ docker pull ajilaag/clamav-rest
 
 The following image tags are available:
 
-- `latest` - Most recent release of ClamAV with REST API
-- `YYYYMMDD` - The day of the release
-- `sha-...` - The git commit sha. This version ensures that the exact image is used and will be unique for each build
+- `latest` - Most recent stable release
+- `v1.2.3` - Specific semantic version (recommended for production)
+- `v1.2` - Latest patch version of a minor release
+- `v1` - Latest minor version of a major release
+- `sha-...` - Specific git commit (for testing/debugging)
 
 # Quick Start
 
@@ -318,26 +320,11 @@ Some very quick notes about running the python tests:
 
 You can then deactivate the Python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
 
-## Updates
+## Release Notes
 
-2025-12-01: [PR 75](https://github.com/ajilach/clamav-rest/pull/75) from [arizon-dread](https://github.com/arizon-dread) was merged to provide an easy to use test suite in Docker. While at it, we merged some chores.
+For detailed release notes, changelogs, and version history, please see our [Releases page](https://github.com/ajilach/clamav-rest/releases).
 
-2025-05-01: [PR 54](https://github.com/ajilach/clamav-rest/pull/54) CORS Support added and test suite added to verify proper functioning thanks to some long nights from [arizon-dread](https://github.com/arizon-dread).
-
-2025-02-07: Improved documentation.
-
-2025-01-08: [PR 50](https://github.com/ajilach/clamav-rest/pull/50) integrated which now provides a new `/v2` endpoint returning more scan result information: status, description, http status and a list of scanned files. See the PR for more details. The old `/scan` endpoint is now considered deprecated. Also, a file size scan limit has been added which can be configured through the `MAX_FILE_SIZE` environment variable. This update also fixes a bug that would falsely return `200 OK` if the first file in a multi file scan was clean, regardless if any of the following files contained viruses. All endpoints now increment the Prometheus virus metric counter when a virus is discovered during a scan.
-
-2024-10-21: freshclam notifies the correct `.clamd.conf` so that `clamd` is notified about updates and the correct version is returned now.
-This is an additional fix to the latest fix from October 15 2024 which was not working. Thanks to [christianbumann](https://github.com/christianbumann) and [arizon-dread](https://github.com/arizon-dread).
-
-2024-10-15: ClamAV was thought to handle database updates correctly thanks to [christianbumann](https://github.com/christianbumann). It turned out that this was not the case.
-
-As of May 2024, the releases are built for multiple architectures thanks to efforts from [kcirtapfromspace](https://github.com/kcirtapfromspace) and support non-root read-only deployments thanks to [robaca](https://github.com/robaca).
-
-The additional endpoint `/version` is now available to check the `clamd` version and signature date. Thanks [pastral](https://github.com/pastral).
-
-Closed a security hole by upgrading our `Dockerfile` to the alpine base image version `3.19` thanks to [Marsup](https://github.com/Marsup).
+We follow [Semantic Versioning](https://semver.org/) and use [Conventional Commits](https://www.conventionalcommits.org/) to automatically generate changelogs.
 
 # Deprecations
 
@@ -355,14 +342,13 @@ The [centos.Dockerfile](./centos.Dockerfile) has been last updated in the releas
 
 # Contributing
 
-We welcome and appreciate contributions from the community. To keep our project maintainable and high quality, please follow these best practices:
+We welcome and appreciate contributions from the community! 🎉
 
-- **Fork and Branch:** Fork the repository and work on a feature branch. Make sure your branch is up-to-date with the latest changes.
-- **Coding Standards:** Adhere to standard Go conventions and ensure your code is clean, well-documented, and tested.
-- **Commit Messages:** Write clear and concise commit messages explaining your changes.
-- **Pull Requests:** Open a pull request with a clear description of your changes and reference any related issues. Our maintainers will review and provide feedback.
-- **Issues:** If you encounter a bug or have a feature suggestion, please open an issue before starting work to discuss your idea.
-- **Documentation:** Update relevant documentation and tests as needed with your changes.
+Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
+- Using conventional commits for automatic versioning
+- Development workflow and testing
+- How our CI/CD pipeline works
+- Code standards and best practices
 
 Thank you for helping improve the project!
 
