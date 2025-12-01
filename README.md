@@ -320,6 +320,8 @@ You can then deactivate the Python environment with `deactivate`, and shutdown t
 
 ## Updates
 
+2025-12-01: [PR 75](https://github.com/ajilach/clamav-rest/pull/75) from [arizon-dread](https://github.com/arizon-dread) was merged to provide an easy to use test suite in Docker. While at it, we merged some chores.
+
 2025-05-01: [PR 54](https://github.com/ajilach/clamav-rest/pull/54) CORS Support added and test suite added to verify proper functioning thanks to some long nights from [arizon-dread](https://github.com/arizon-dread).
 
 2025-02-07: Improved documentation.
