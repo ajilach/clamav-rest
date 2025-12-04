@@ -112,9 +112,6 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	for responseItem := range response {
 		eachResp := scanResponse{Status: responseItem.Status, Description: responseItem.Description}
 		eachResp.httpStatus = getHTTPStatusByClamStatus(responseItem)
-		if responseItem.Status == clamd.RES_FOUND {
-			noOfFoundViruses.Inc()
-		}
 		scanResults = append(scanResults, eachResp)
 	}
 
