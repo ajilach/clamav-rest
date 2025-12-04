@@ -1,0 +1,185 @@
+name: Release - Build & Push Container Image
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  REGISTRY_IMAGE: "${{ vars.DOCKER_USER }}/clamav-rest"
+  REGISTRY_USER: ${{ vars.DOCKER_USER }}
+  REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # Determine the next semantic version based on commit messages
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.tag_version.outputs.new_tag }}
+      changelog: ${{ steps.tag_version.outputs.changelog }}
+      new_version: ${{ steps.tag_version.outputs.new_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Calculate semantic version
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches: master
+          pre_release_branches: develop,beta
+          # Conventional commit prefixes:
+          # feat: minor version bump (new features)
+          # fix: patch version bump (bug fixes)
+          # BREAKING CHANGE: major version bump
+          # chore, docs, style, refactor, perf, test: no version bump
+          default_bump: patch
+          tag_prefix: v
+
+  build:
+    runs-on: ubuntu-latest
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+
+    steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.version.outputs.new_version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.version.outputs.new_version }}
+            type=semver,pattern={{major}},value=${{ needs.version.outputs.new_version }}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v5
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - version
+      - build
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v6
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.version.outputs.new_version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.version.outputs.new_version }}
+            type=semver,pattern={{major}},value=${{ needs.version.outputs.new_version }}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.version.outputs.new_version }}
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.version.outputs.new_tag }}
+          name: Release ${{ needs.version.outputs.new_tag }}
+          body: |
+            ## 🚀 Changes in this release
+
+            ${{ needs.version.outputs.changelog }}
+
+            ## 🐳 Docker Images
+
+            Pull the latest release:
+            ```bash
+            docker pull ${{ env.REGISTRY_IMAGE }}:${{ needs.version.outputs.new_version }}
+            docker pull ${{ env.REGISTRY_IMAGE }}:latest
+            ```
+
+            Available tags:
+            - `${{ needs.version.outputs.new_version }}` - Full semantic version
+            - `latest` - Always points to the latest release
+
+            ## 📦 Multi-platform support
+
+            Images are built for:
+            - linux/amd64
+            - linux/arm64
