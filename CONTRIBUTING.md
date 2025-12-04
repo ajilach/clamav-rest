@@ -144,7 +144,7 @@ Before submitting your PR, please test your changes:
 ./run-tests
 
 # Build and test locally
-docker build -t clamav-rest:test .
+docker build . -f Dockerfile.test -t clamav-rest:test 
 docker run --rm clamav-rest:test
 ```
 
