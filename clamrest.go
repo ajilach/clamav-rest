@@ -36,7 +36,7 @@ func clamversion(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errJSON, eErr := json.Marshal(err)
 		if eErr != nil {
-			fmt.Println(eErr)
+			log.Println(eErr)
 			return
 		}
 		fmt.Fprint(w, string(errJSON))
@@ -65,7 +65,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errJSON, eErr := json.Marshal(err)
 		if eErr != nil {
-			fmt.Println(eErr)
+			log.Println(eErr)
 			return
 		}
 		fmt.Fprint(w, string(errJSON))
@@ -74,7 +74,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 	resJSON, eRes := json.Marshal(response)
 	if eRes != nil {
-		fmt.Println(eRes)
+		log.Println(eRes)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -89,7 +89,7 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		_, err := w.Write([]byte("URL param 'path' is missing"))
 		if err != nil {
-			fmt.Printf("unable to write error msg to client, %v\n", err)
+			log.Printf("unable to write error msg to client, %v\n", err)
 		}
 		return
 	}
@@ -101,7 +101,7 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errJSON, eErr := json.Marshal(err)
 		if eErr != nil {
-			fmt.Println(eErr)
+			log.Println(eErr)
 			return
 		}
 		fmt.Fprint(w, string(errJSON))
@@ -120,7 +120,7 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 
 	resJSON, eRes := json.Marshal(scanResults)
 	if eRes != nil {
-		fmt.Println(eRes)
+		log.Println(eRes)
 		return
 	}
 	w.WriteHeader(getResponseStatus(scanResults))
@@ -166,12 +166,12 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 				if version == 2 {
 					fileResp := scanResponse{Status: "ERROR", Description: "MimePart FileName missing", httpStatus: 422}
 					resp = append(resp, fileResp)
-					fmt.Printf("%v Not scanning, MimePart FileName not supplied\n", time.Now().Format(time.RFC3339))
+					log.Println("Not scanning, MimePart FileName not supplied")
 				}
 				continue
 			}
 
-			fmt.Printf("%v Started scanning: %v\n", time.Now().Format(time.RFC3339), part.FileName())
+			log.Printf("Started scanning: %v\n", part.FileName())
 			var abort chan bool
 			response, err := c.ScanStream(part, abort)
 			if err != nil {
@@ -181,7 +181,7 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 				go func() {
 					response <- scanErrResult
 					close(response)
-					fmt.Printf("%v Clamd returned an error, probably a too large file as input (causing broken pipe and closed connection) %v\n", time.Now().Format(time.RFC3339), err)
+					log.Printf("Clamd returned an error, probably a too large file as input (causing broken pipe and closed connection) %v\n", err)
 					// The underlying service closes the connection if the file is to large, logging output
 					// We never receive the clamd output of `^INSTREAM: Size limit reached` up here, just a closed connection.
 				}()
@@ -192,27 +192,27 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 				eachResp := scanResponse{Status: s.Status, Description: s.Description}
 				if version == 2 {
 					eachResp.FileName = part.FileName()
-					fmt.Printf("%v Scanned file %v\n", time.Now().Format(time.RFC3339), part.FileName())
+					log.Printf("Scanned file %v\n", part.FileName())
 				}
 				// Set each possible status and then send the most appropriate one
 				eachResp.httpStatus = getHTTPStatusByClamStatus(s)
 				resp = append(resp, eachResp)
-				fmt.Printf("%v Scan result for: %v, %v\n", time.Now().Format(time.RFC3339), part.FileName(), s)
+				log.Printf("Scan result for: %v, %v\n", part.FileName(), s)
 			}
-			fmt.Printf("%v Finished scanning: %v\n", time.Now().Format(time.RFC3339), part.FileName())
+			log.Printf("Finished scanning: %v\n", part.FileName())
 		}
 		w.WriteHeader(getResponseStatus(resp))
 		if version == 2 {
 			jsonRes, jErr := json.Marshal(resp)
 			if jErr != nil {
-				fmt.Printf("%v Error marshalling json, %v\n", time.Now().Format(time.RFC3339), jErr)
+				log.Printf("Error marshalling json, %v\n", jErr)
 			}
 			fmt.Fprint(w, string(jsonRes))
 		} else {
 			for _, v := range resp {
 				jsonRes, jErr := json.Marshal(v)
 				if jErr != nil {
-					fmt.Printf("%v Error marshalling json, %v\n", time.Now().Format(time.RFC3339), jErr)
+					log.Printf("Error marshalling json, %v\n", jErr)
 				}
 				fmt.Fprint(w, string(jsonRes))
 			}
@@ -228,7 +228,8 @@ func getHTTPStatusByClamStatus(result *clamd.ScanResult) int {
 	case clamd.RES_OK:
 		return http.StatusOK // 200
 	case clamd.RES_FOUND:
-		fmt.Printf("%v Virus FOUND\n", time.Now().Format(time.RFC3339))
+		log.Println("Virus FOUND")
+		noOfFoundViruses.Inc()
 		return http.StatusNotAcceptable // 406
 	case clamd.RES_ERROR:
 		return http.StatusBadRequest // 400
@@ -277,7 +278,7 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 
 	c := clamd.NewClamd(opts["CLAMD_PORT"])
 
-	fmt.Printf("%v Started scanning plain body\n", time.Now().Format(time.RFC3339))
+	log.Println("Started scanning plain body")
 	var abort chan bool
 	defer r.Body.Close()
 	response, err := c.ScanStream(r.Body, abort)
@@ -286,10 +287,10 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusRequestEntityTooLarge)
 		resp := scanResponse{Status: clamd.RES_PARSE_ERROR, Description: "File size limit exceeded"}
-		fmt.Printf("%v Clamd returned error, broken pipe and closed connection can indicate too large file, %v\n", time.Now().Format(time.RFC3339), err)
+		log.Printf("Clamd returned error, broken pipe and closed connection can indicate too large file, %v\n", err)
 		jsonResp, jErr := json.Marshal(resp)
 		if jErr != nil {
-			fmt.Printf("%v Error marshalling json, %v\n", time.Now().Format(time.RFC3339), jErr)
+			log.Printf("Error marshalling json, %v\n", jErr)
 		}
 		fmt.Fprint(w, string(jsonResp))
 		return
@@ -304,7 +305,7 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 		resps = append(resps, resp)
 		w.WriteHeader(getResponseStatus(resps))
 		fmt.Fprint(w, resp)
-		fmt.Printf("%v Scan result for plain body: %v\n", time.Now().Format(time.RFC3339), s)
+		log.Printf("Scan result for plain body: %v\n", s)
 	}
 }
 
@@ -312,22 +313,22 @@ func waitForClamD(port string, times int, maxTimes int) {
 	clamdTest := clamd.NewClamd(port)
 	err := clamdTest.Ping()
 	if err != nil {
-		log.Printf("Clamd did not respond to ping")
+		log.Println("Clamd did not respond to ping")
 	}
 	version, err := clamdTest.Version()
 
 	if err != nil {
 		if times < maxTimes {
-			fmt.Printf("clamD not running, waiting times [%v]\n", times)
+			log.Printf("clamD not running, waiting times [%v]\n", times)
 			time.Sleep(time.Second * 4)
 			waitForClamD(port, times+1, maxTimes)
 		} else {
-			fmt.Printf("%v Error getting clamd version: %v\n", time.Now().Format(time.RFC3339), err)
+			log.Printf("Error getting clamd version: %v\n", err)
 			os.Exit(1)
 		}
 	} else {
 		for versionString := range version {
-			fmt.Printf("%v Clamd version: %#v\n", time.Now().Format(time.RFC3339), versionString.Raw)
+			log.Printf("Clamd version: %#v\n", versionString.Raw)
 		}
 	}
 }
@@ -352,17 +353,17 @@ func main() {
 		opts["CLAMD_PORT"] = "tcp://localhost:3310"
 	}
 
-	fmt.Printf("Starting clamav rest bridge\n")
-	fmt.Printf("Connecting to clamd on %v\n", opts["CLAMD_PORT"])
+	log.Println("Starting clamav rest bridge")
+	log.Printf("Connecting to clamd on %v\n", opts["CLAMD_PORT"])
 
 	maxReconnect, err := strconv.Atoi(opts["MAX_RECONNECT_TIME"])
 	if err != nil {
-		fmt.Println("Error converting MAX_RECONNECT_TIME to integer:", err)
+		log.Printf("Error converting MAX_RECONNECT_TIME to integer: %v\n", err)
 	}
 
 	waitForClamD(opts["CLAMD_PORT"], 1, maxReconnect)
 
-	fmt.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
+	log.Printf("Connected to clamd on %v\n", opts["CLAMD_PORT"])
 	mux := http.NewServeMux()
 	// Add cors middleware
 	c := cors.New(getCorsPolicy())
