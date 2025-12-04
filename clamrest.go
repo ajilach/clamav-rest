@@ -34,24 +34,24 @@ func clamversion(w http.ResponseWriter, r *http.Request) {
 
 	version, err := c.Version()
 	if err != nil {
-		errJson, eErr := json.Marshal(err)
+		errJSON, eErr := json.Marshal(err)
 		if eErr != nil {
 			fmt.Println(eErr)
 			return
 		}
-		fmt.Fprint(w, string(errJson))
+		fmt.Fprint(w, string(errJSON))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	for version_string := range version {
-		if strings.HasPrefix(version_string.Raw, "ClamAV ") {
-			version_values := strings.Split(strings.Replace(version_string.Raw, "ClamAV ", "", 1), "/")
-			respJson := fmt.Sprintf("{ \"Clamav\": \"%s\" }", version_values[0])
-			if len(version_values) == 3 {
-				respJson = fmt.Sprintf("{ \"Clamav\": \"%s\", \"Signature\": \"%s\" , \"Signature_date\": \"%s\" }", version_values[0], version_values[1], version_values[2])
+	for versionStr := range version {
+		if strings.HasPrefix(versionStr.Raw, "ClamAV ") {
+			versionValues := strings.Split(strings.Replace(versionStr.Raw, "ClamAV ", "", 1), "/")
+			respJSON := fmt.Sprintf("{ \"Clamav\": \"%s\" }", versionValues[0])
+			if len(versionValues) == 3 {
+				respJSON = fmt.Sprintf("{ \"Clamav\": \"%s\", \"Signature\": \"%s\" , \"Signature_date\": \"%s\" }", versionValues[0], versionValues[1], versionValues[2])
 			}
-			fmt.Fprint(w, string(respJson))
+			fmt.Fprint(w, string(respJSON))
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -63,22 +63,22 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 	response, err := c.Stats()
 	if err != nil {
-		errJson, eErr := json.Marshal(err)
+		errJSON, eErr := json.Marshal(err)
 		if eErr != nil {
 			fmt.Println(eErr)
 			return
 		}
-		fmt.Fprint(w, string(errJson))
+		fmt.Fprint(w, string(errJSON))
 		return
 	}
 
-	resJson, eRes := json.Marshal(response)
+	resJSON, eRes := json.Marshal(response)
 	if eRes != nil {
 		fmt.Println(eRes)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	fmt.Fprint(w, string(resJson))
+	fmt.Fprint(w, string(resJSON))
 }
 
 func scanPathHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,33 +99,33 @@ func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	c := clamd.NewClamd(opts["CLAMD_PORT"])
 	response, err := c.AllMatchScanFile(path)
 	if err != nil {
-		errJson, eErr := json.Marshal(err)
+		errJSON, eErr := json.Marshal(err)
 		if eErr != nil {
 			fmt.Println(eErr)
 			return
 		}
-		fmt.Fprint(w, string(errJson))
+		fmt.Fprint(w, string(errJSON))
 		return
 	}
 
 	scanResults := []scanResponse{}
 	for responseItem := range response {
 		eachResp := scanResponse{Status: responseItem.Status, Description: responseItem.Description}
-		eachResp.httpStatus = getHttpStatusByClamStatus(responseItem)
+		eachResp.httpStatus = getHTTPStatusByClamStatus(responseItem)
 		if responseItem.Status == clamd.RES_FOUND {
 			noOfFoundViruses.Inc()
 		}
 		scanResults = append(scanResults, eachResp)
 	}
 
-	resJson, eRes := json.Marshal(scanResults)
+	resJSON, eRes := json.Marshal(scanResults)
 	if eRes != nil {
 		fmt.Println(eRes)
 		return
 	}
 	w.WriteHeader(getResponseStatus(scanResults))
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	fmt.Fprint(w, string(resJson))
+	fmt.Fprint(w, string(resJSON))
 }
 
 func v2ScanHandler(w http.ResponseWriter, r *http.Request) {
@@ -195,7 +195,7 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 					fmt.Printf("%v Scanned file %v\n", time.Now().Format(time.RFC3339), part.FileName())
 				}
 				// Set each possible status and then send the most appropriate one
-				eachResp.httpStatus = getHttpStatusByClamStatus(s)
+				eachResp.httpStatus = getHTTPStatusByClamStatus(s)
 				resp = append(resp, eachResp)
 				fmt.Printf("%v Scan result for: %v, %v\n", time.Now().Format(time.RFC3339), part.FileName(), s)
 			}
@@ -223,7 +223,7 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 	}
 }
 
-func getHttpStatusByClamStatus(result *clamd.ScanResult) int {
+func getHTTPStatusByClamStatus(result *clamd.ScanResult) int {
 	switch result.Status {
 	case clamd.RES_OK:
 		return http.StatusOK // 200
@@ -298,7 +298,7 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 
 		resp := scanResponse{Status: s.Status, Description: s.Description}
 		// respJson := fmt.Sprintf("{ Status: %q, Description: %q }", s.Status, s.Description)
-		resp.httpStatus = getHttpStatusByClamStatus(s)
+		resp.httpStatus = getHTTPStatusByClamStatus(s)
 
 		resps := []scanResponse{}
 		resps = append(resps, resp)
@@ -310,7 +310,10 @@ func scanHandlerBody(w http.ResponseWriter, r *http.Request) {
 
 func waitForClamD(port string, times int, maxTimes int) {
 	clamdTest := clamd.NewClamd(port)
-	clamdTest.Ping()
+	err := clamdTest.Ping()
+	if err != nil {
+		log.Printf("Clamd did not respond to ping")
+	}
 	version, err := clamdTest.Version()
 
 	if err != nil {
@@ -323,8 +326,8 @@ func waitForClamD(port string, times int, maxTimes int) {
 			os.Exit(1)
 		}
 	} else {
-		for version_string := range version {
-			fmt.Printf("%v Clamd version: %#v\n", time.Now().Format(time.RFC3339), version_string.Raw)
+		for versionString := range version {
+			fmt.Printf("%v Clamd version: %#v\n", time.Now().Format(time.RFC3339), versionString.Raw)
 		}
 	}
 }
@@ -353,7 +356,6 @@ func main() {
 	fmt.Printf("Connecting to clamd on %v\n", opts["CLAMD_PORT"])
 
 	maxReconnect, err := strconv.Atoi(opts["MAX_RECONNECT_TIME"])
-
 	if err != nil {
 		fmt.Println("Error converting MAX_RECONNECT_TIME to integer:", err)
 	}
@@ -411,6 +413,7 @@ func main() {
 
 func getCorsPolicy() cors.Options {
 	envs := os.Environ()
+	// Ignoring Go's naming conventions of non-snake_case naming to keep the same variable name as the env var.
 	var allow_origins []string
 
 	// Only allow same-origin requests by default
