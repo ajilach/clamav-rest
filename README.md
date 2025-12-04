@@ -32,6 +32,8 @@
 
 This is a two in one docker image which runs the open source virus scanner ClamAV (https://www.clamav.net/), performs automatic virus definition updates as a background process and provides a REST API interface to interact with the ClamAV process.
 
+> **📢 New in December 2025:** We've migrated to semantic versioning! Docker images are now tagged with version numbers like `v1.2.3` instead of dates. Releases are automatically created when pull requests are merged, with versions determined by [conventional commit messages](CONTRIBUTING.md). Check our [Releases page](https://github.com/ajilach/clamav-rest/releases) for detailed changelogs.
+
 # Installation
 
 Automated builds of the image are available on [Docker Hub](https://hub.docker.com/r/ajilaag/clamav-rest) and are the recommended method of installation. Grab the lastest release:
@@ -192,8 +194,9 @@ Below is the complete list of available options that can be used to customize yo
 | `9443` | HTTPS REST listening port                |
 
 ## Running on Kubernetes
+
 Please refer to the `kubernetes_example/` folder on how to configure the service.  
-A way to mount a data directory from a pvc has been added to the manifest. Uncomment it to use it.  
+A way to mount a data directory from a pvc has been added to the manifest. Uncomment it to use it.
 
 # Maintenance / Monitoring
 
@@ -274,7 +277,7 @@ Content-Length: 59
 ```bash
 $ curl -i -k --http2-prior-knowledge -F "file=@clamrest.go" http://localhost:9000/v2/scan
 
-HTTP/2 200 
+HTTP/2 200
 content-type: application/json; charset=utf-8
 content-length: 59
 date: Fri, 28 Feb 2025 21:49:17 GMT
@@ -285,7 +288,7 @@ date: Fri, 28 Feb 2025 21:49:17 GMT
 ```bash
 $ curl -i -k --http2 -F "file=@clamrest.go" https://localhost:9443/v2/scan
 
-HTTP/2 200 
+HTTP/2 200
 content-type: application/json; charset=utf-8
 content-length: 59
 date: Fri, 28 Feb 2025 21:49:33 GMT
@@ -345,6 +348,7 @@ The [centos.Dockerfile](./centos.Dockerfile) has been last updated in the releas
 We welcome and appreciate contributions from the community! 🎉
 
 Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
+
 - Using conventional commits for automatic versioning
 - Development workflow and testing
 - How our CI/CD pipeline works
