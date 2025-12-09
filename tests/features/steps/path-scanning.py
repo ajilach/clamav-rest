@@ -3,7 +3,7 @@ from hamcrest import *
 import requests
 
 @given('I have a path with contents "{contents}" to scan with scanPath')
-def step_imp(context, contents):
+def step_impl(context, contents):
 	context.query_param = contents
 
 @when('I scan the path for a virus')

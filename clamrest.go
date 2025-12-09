@@ -81,6 +81,9 @@ func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(resJSON))
 }
 
+func scanFileHandler(w http.ResponseWriter, r *http.Request) {
+}
+
 func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("url query: " + r.URL.RawQuery)
 	paths, ok := r.URL.Query()["path"]
@@ -367,6 +370,7 @@ func main() {
 
 	mux.HandleFunc("POST /scan", scanHandler)
 	mux.HandleFunc("POST /v2/scan", v2ScanHandler)
+	mux.HandleFunc("GET /scanFile", scanFileHandler)
 	mux.HandleFunc("GET /scanPath", scanPathHandler)
 	mux.HandleFunc("POST /scanHandlerBody", scanHandlerBody)
 	mux.HandleFunc("GET /version", clamversion)
