@@ -196,6 +196,7 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 	v2url := fmt.Sprintf("%s%s/v2/scan", string(r.URL.Scheme), r.Host)
 	w.Header().Add("Link", fmt.Sprintf("%v; rel=successor-version", v2url))
 	noOfHitsOnDeprecatedScanEndpoint.Inc()
+	log.Printf("DEPRECATED ENDPOINT: Migrate from /scan to /v2/scan\n")
 
 	scanner(w, r, 1)
 }
