@@ -132,7 +132,7 @@ func scanFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("finished scanning %v\n", path)
+	log.Printf("Finished scanning %v\n", path)
 	w.WriteHeader(resp[0].httpStatus)
 	w.Write(respJSON)
 }
