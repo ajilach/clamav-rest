@@ -3,7 +3,7 @@ from hamcrest import *
 import requests
 
 @given('I have a body with contents "{contents}"')
-def step_imp(context, contents):
+def step_impl(context, contents):
 	context.body = contents
 
 @when('I POST the content to /scanHandlerBody to scan the content for a virus')

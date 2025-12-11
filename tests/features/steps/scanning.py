@@ -3,7 +3,7 @@ from hamcrest import *
 import requests
 
 @given('I have a file with contents "{contents}"')
-def step_imp(context, contents):
+def step_impl(context, contents):
 	context.file_contents = contents
 
 @when('I scan the file for a virus')
