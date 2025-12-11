@@ -25,6 +25,11 @@ var noOfFoundViruses = prometheus.NewCounter(prometheus.CounterOpts{
 	Help: "The total number of found viruses",
 })
 
+var noOfHitsOnDeprecatedScanEndpoint = prometheus.NewCounter(prometheus.CounterOpts{
+	Name: "no_of_hits_on_deprecated_scan_endpoint",
+	Help: "The number of hits on the deprecated /scan endpoint. If this is not 0, inform your clients to ajust their code to use the /v2/scan endpoint instead.",
+})
+
 func init() {
 	log.SetOutput(io.Discard)
 }
@@ -190,6 +195,7 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Deprecation", "version=v1")
 	v2url := fmt.Sprintf("%s%s/v2/scan", string(r.URL.Scheme), r.Host)
 	w.Header().Add("Link", fmt.Sprintf("%v; rel=successor-version", v2url))
+	noOfHitsOnDeprecatedScanEndpoint.Inc()
 
 	scanner(w, r, 1)
 }
@@ -398,6 +404,7 @@ func main() {
 		collectors.WithGoCollections(collectors.GoRuntimeMemStatsCollection | collectors.GoRuntimeMetricsCollection),
 	))
 	reg.MustRegister(noOfFoundViruses)
+	reg.MustRegister(noOfHitsOnDeprecatedScanEndpoint)
 
 	for _, e := range os.Environ() {
 		pair := strings.Split(e, "=")
