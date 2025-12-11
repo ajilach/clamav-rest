@@ -82,6 +82,59 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func scanFileHandler(w http.ResponseWriter, r *http.Request) {
+	paths, ok := r.URL.Query()["path"]
+	if !ok || len(paths[0]) < 1 {
+		log.Println("scanFile was called without a path")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("URL param 'path' is missing"))
+		return
+	}
+
+	path := paths[0]
+
+	c := clamd.NewClamd(opts["CLAMD_PORT"])
+	log.Printf("Started scanning %v\n", path)
+	response, err := c.ScanFile(path)
+	if err != nil {
+		errJSON, marshalErr := json.Marshal(err)
+		if marshalErr != nil {
+			log.Printf("error marshalling error from clamd, %v\n", marshalErr)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("error from clamd when scanning file"))
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, string(errJSON))
+		return
+	}
+	var resp []scanResponse
+	// loop over the channel to collect the response
+	for respItem := range response {
+		scanResp := scanResponse{
+			httpStatus:  getHTTPStatusByClamStatus(respItem),
+			Status:      respItem.Status,
+			Description: respItem.Description,
+			FileName:    path,
+		}
+		if respItem.Status == clamd.RES_PARSE_ERROR {
+			scanResp.Description += ", this likely means the file path supplied to the api doesn't point to a file on disk."
+		}
+		resp = append(resp, scanResp)
+	}
+
+	// if the file is not found, we will get two almost identical error scanResponses on the channel.
+	// Will just use the first and call it a day.
+	respJSON, err := json.Marshal(resp[0])
+	if err != nil {
+		log.Printf("error marshalling response to json, %v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("unable to marshal response"))
+		return
+	}
+
+	log.Printf("finished scanning %v\n", path)
+	w.WriteHeader(resp[0].httpStatus)
+	w.Write(respJSON)
 }
 
 func scanPathHandler(w http.ResponseWriter, r *http.Request) {
