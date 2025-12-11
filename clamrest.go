@@ -389,6 +389,8 @@ func waitForClamD(port string, times int, maxTimes int) {
 func main() {
 	opts = make(map[string]string)
 
+	log.SetFlags(0)
+	log.SetOutput(new(logWriter))
 	// https://github.com/prometheus/client_golang/blob/main/examples/gocollector/main.go
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(collectors.NewBuildInfoCollector())
@@ -486,4 +488,11 @@ func getCorsPolicy() cors.Options {
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodOptions},
 		AllowCredentials: false,
 	}
+}
+
+// format logger so it logs the same formated timestamp as the clamav process
+type logWriter struct{}
+
+func (writer logWriter) Write(bytes []byte) (int, error) {
+	return fmt.Printf("%v -> %v", time.Now().UTC().Format(time.ANSIC), string(bytes))
 }
