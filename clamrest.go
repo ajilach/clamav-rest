@@ -502,5 +502,5 @@ func getCorsPolicy() cors.Options {
 type logWriter struct{}
 
 func (writer logWriter) Write(bytes []byte) (int, error) {
-	return fmt.Printf("%v -> %v", time.Now().UTC().Format(time.ANSIC), string(bytes))
+	return fmt.Printf("%v -> %v", time.Now().Format(time.ANSIC), string(bytes))
 }
