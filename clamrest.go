@@ -27,7 +27,7 @@ var noOfFoundViruses = prometheus.NewCounter(prometheus.CounterOpts{
 
 var noOfHitsOnDeprecatedScanEndpoint = prometheus.NewCounter(prometheus.CounterOpts{
 	Name: "no_of_hits_on_deprecated_scan_endpoint",
-	Help: "The number of hits on the deprecated /scan endpoint. If this is not 0, inform your clients to ajust their code to use the /v2/scan endpoint instead.",
+	Help: "The number of hits on the deprecated /scan endpoint. If this is not 0, inform your clients to adjust their code to use the /v2/scan endpoint instead.",
 })
 
 func init() {
@@ -103,7 +103,7 @@ func scanFileHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errJSON, marshalErr := json.Marshal(err)
 		if marshalErr != nil {
-			log.Printf("error marshalling error from clamd, %v\n", marshalErr)
+			log.Printf("marshalling error from clamd, %v\n", marshalErr)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("error from clamd when scanning file"))
 			return
@@ -122,7 +122,7 @@ func scanFileHandler(w http.ResponseWriter, r *http.Request) {
 			FileName:    path,
 		}
 		if respItem.Status == clamd.RES_PARSE_ERROR {
-			scanResp.Description += ", this likely means the file path supplied to the api doesn't point to a file on disk."
+			scanResp.Description += ", this likely means the file path supplied to the api does not point to a file on disk."
 		}
 		resp = append(resp, scanResp)
 	}
