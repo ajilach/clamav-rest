@@ -34,7 +34,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/) to automatic
 
 **Commit Message Format:**
 
-```
+```text
 <type>(<scope>): <subject>
 
 <body>
@@ -58,7 +58,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/) to automatic
 
 For breaking changes that require a **major** version bump (e.g., 1.0.0 → 2.0.0), add `BREAKING CHANGE:` in the commit footer:
 
-```
+```text
 feat: change API response format
 
 BREAKING CHANGE: The scan endpoint now returns a different JSON structure.
