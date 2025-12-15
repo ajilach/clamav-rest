@@ -25,6 +25,11 @@ var noOfFoundViruses = prometheus.NewCounter(prometheus.CounterOpts{
 	Help: "The total number of found viruses",
 })
 
+var noOfHitsOnDeprecatedScanEndpoint = prometheus.NewCounter(prometheus.CounterOpts{
+	Name: "no_of_hits_on_deprecated_scan_endpoint",
+	Help: "The number of hits on the deprecated /scan endpoint. If this is not 0, inform your clients to adjust their code to use the /v2/scan endpoint instead.",
+})
+
 func init() {
 	log.SetOutput(io.Discard)
 }
@@ -81,6 +86,62 @@ func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(resJSON))
 }
 
+func scanFileHandler(w http.ResponseWriter, r *http.Request) {
+	paths, ok := r.URL.Query()["path"]
+	if !ok || len(paths[0]) < 1 {
+		log.Println("scanFile was called without a path")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("URL param 'path' is missing"))
+		return
+	}
+
+	path := paths[0]
+
+	c := clamd.NewClamd(opts["CLAMD_PORT"])
+	log.Printf("Started scanning %v\n", path)
+	response, err := c.ScanFile(path)
+	if err != nil {
+		errJSON, marshalErr := json.Marshal(err)
+		if marshalErr != nil {
+			log.Printf("marshalling error from clamd, %v\n", marshalErr)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("error from clamd when scanning file"))
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, string(errJSON))
+		return
+	}
+	var resp []scanResponse
+	// loop over the channel to collect the response
+	for respItem := range response {
+		scanResp := scanResponse{
+			httpStatus:  getHTTPStatusByClamStatus(respItem),
+			Status:      respItem.Status,
+			Description: respItem.Description,
+			FileName:    path,
+		}
+		if respItem.Status == clamd.RES_PARSE_ERROR {
+			scanResp.Description += ", this likely means the file path supplied to the api does not point to a file on disk."
+		}
+		resp = append(resp, scanResp)
+	}
+
+	// if the file is not found, we will get two almost identical error scanResponses on the channel.
+	// Will just use the first and call it a day.
+	respJSON, err := json.Marshal(resp[0])
+	if err != nil {
+		log.Printf("error marshalling response to json, %v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("unable to marshal response"))
+		return
+	}
+
+	log.Printf("Finished scanning %v\n", path)
+	w.WriteHeader(resp[0].httpStatus)
+	w.Write(respJSON)
+}
+
 func scanPathHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("url query: " + r.URL.RawQuery)
 	paths, ok := r.URL.Query()["path"]
@@ -134,6 +195,8 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Deprecation", "version=v1")
 	v2url := fmt.Sprintf("%s%s/v2/scan", string(r.URL.Scheme), r.Host)
 	w.Header().Add("Link", fmt.Sprintf("%v; rel=successor-version", v2url))
+	noOfHitsOnDeprecatedScanEndpoint.Inc()
+	log.Printf("DEPRECATED ENDPOINT: Migrate from /scan to /v2/scan\n")
 
 	scanner(w, r, 1)
 }
@@ -333,6 +396,8 @@ func waitForClamD(port string, times int, maxTimes int) {
 func main() {
 	opts = make(map[string]string)
 
+	log.SetFlags(0)
+	log.SetOutput(new(logWriter))
 	// https://github.com/prometheus/client_golang/blob/main/examples/gocollector/main.go
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(collectors.NewBuildInfoCollector())
@@ -340,6 +405,7 @@ func main() {
 		collectors.WithGoCollections(collectors.GoRuntimeMemStatsCollection | collectors.GoRuntimeMetricsCollection),
 	))
 	reg.MustRegister(noOfFoundViruses)
+	reg.MustRegister(noOfHitsOnDeprecatedScanEndpoint)
 
 	for _, e := range os.Environ() {
 		pair := strings.Split(e, "=")
@@ -367,6 +433,7 @@ func main() {
 
 	mux.HandleFunc("POST /scan", scanHandler)
 	mux.HandleFunc("POST /v2/scan", v2ScanHandler)
+	mux.HandleFunc("GET /scanFile", scanFileHandler)
 	mux.HandleFunc("GET /scanPath", scanPathHandler)
 	mux.HandleFunc("POST /scanHandlerBody", scanHandlerBody)
 	mux.HandleFunc("GET /version", clamversion)
@@ -429,4 +496,11 @@ func getCorsPolicy() cors.Options {
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodOptions},
 		AllowCredentials: false,
 	}
+}
+
+// format logger so it logs the same formated timestamp as the clamav process
+type logWriter struct{}
+
+func (writer logWriter) Write(bytes []byte) (int, error) {
+	return fmt.Printf("%v -> %v", time.Now().Format(time.ANSIC), string(bytes))
 }
