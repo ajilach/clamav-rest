@@ -416,6 +416,14 @@ func main() {
 		opts["CLAMD_PORT"] = "tcp://localhost:3310"
 	}
 
+	if opts["SSL_CERT"] == "" {
+		opts["SSL_CERT"] = "/etc/ssl/clamav-rest/server.crt"
+	}
+
+	if opts["SSL_KEY"] == "" {
+		opts["SSL_KEY"] = "/etc/ssl/clamav-rest/server.key"
+	}
+
 	log.Println("Starting clamav rest bridge")
 	log.Printf("Connecting to clamd on %v\n", opts["CLAMD_PORT"])
 
@@ -451,12 +459,6 @@ func main() {
 	// Attach the cors middleware to the middleware chain/request pipeline
 	handler := c.Handler(mux)
 
-	// Configure the HTTPS server
-	tlsServer := &http.Server{
-		Addr:    fmt.Sprintf(":%s", opts["SSL_PORT"]),
-		Handler: handler,
-	}
-
 	// Configure the HTTP server with h2c support
 	var protocols http.Protocols
 	protocols.SetHTTP1(true)
@@ -468,10 +470,20 @@ func main() {
 		Handler:   handler,
 		Protocols: &protocols,
 	}
-	// Start the HTTPS server in a goroutine
-	go func() {
-		log.Fatal(tlsServer.ListenAndServeTLS("/etc/ssl/clamav-rest/server.crt", "/etc/ssl/clamav-rest/server.key"))
-	}()
+
+	if opts["SSL_PORT"] != "" {
+		// Configure the HTTPS server, if SSL_PORT is set
+		tlsServer := &http.Server{
+			Addr:    fmt.Sprintf(":%s", opts["SSL_PORT"]),
+			Handler: handler,
+		}
+
+		// Start the HTTPS server in a goroutine
+		go func() {
+			log.Fatal(tlsServer.ListenAndServeTLS(opts["SSL_CERT"], opts["SSL_KEY"]))
+		}()
+	}
+
 	// Start the HTTP server
 	log.Fatal(httpServer.ListenAndServe())
 }
