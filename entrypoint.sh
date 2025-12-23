@@ -28,6 +28,24 @@ sed -i 's/^#MaxIconsPE .*$/MaxIconsPE '"$MAX_ICONSPE"'/g' /clamav/etc/clamd.conf
 sed -i 's/^#PCREMatchLimit.*$/PCREMatchLimit '"$PCRE_MATCHLIMIT"'/g' /clamav/etc/clamd.conf
 sed -i 's/^#PCRERecMatchLimit .*$/PCRERecMatchLimit '"$PCRE_RECMATCHLIMIT"'/g' /clamav/etc/clamd.conf
 
+# Use proxy for freshclam
+
+if [ -n "$PROXY_SERVER" ]; then
+  sed -i 's~^#HTTPProxyServer .*~HTTPProxyServer '"$PROXY_SERVER"'~g' /etc/clamav/freshclam.conf
+
+    # It's not required, but if they also provided a port, then configure it
+
+    if [ -n "$PROXY_PORT" ]; then
+        sed -i 's/^#HTTPProxyPort .*$/HTTPProxyPort '"$PROXY_PORT"'/g' /etc/clamav/freshclam.conf
+    fi
+
+    # It's not required, but if they also provided a username, then configure both the username and password
+    if [ -n "$PROXY_USERNAME" ]; then
+        sed -i 's/^#HTTPProxyUsername .*$/HTTPProxyUsername '"$PROXY_USERNAME"'/g' /etc/clamav/freshclam.conf
+        sed -i 's~^#HTTPProxyPassword .*~HTTPProxyPassword '"$PROXY_PASSWORD"'~g' /etc/clamav/freshclam.conf
+    fi
+fi
+
 if [ -z "$(ls -A /clamav/data)" ]; then
   cp /var/lib/clamav/* /clamav/data/
 fi
