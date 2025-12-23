@@ -196,7 +196,7 @@ Below is the complete list of available options that can be used to customize yo
 | `PCRE_RECMATCHLIMIT`  | Maximum recursive match calls to PCRE. Defaults to `2000`                                               |
 | `SIGNATURE_CHECKS`    | How many times per day to check for a new database signature. Must be between 1 and 50. Defaults to `2` |
 | `PROXY_SERVER`        | Specify a proxy for freshclam to utilize. Default disabled (optional)                                   |
-| `PROXY_PORT`          | The port for the proxy server. Will only be used if server is set. Default disabled (optional)          |
+| `PROXY_PORT`          | The port for the proxy server. Default disabled (optional)                                              |
 | `PROXY_USERNAME`      | The username for the proxy server. Default disabled (optional)                                          |
 | `PROXY_PASSWORD`      | The password for the proxy server. Default disabled (optional)                                          |
 
