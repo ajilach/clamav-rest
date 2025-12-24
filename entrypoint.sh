@@ -31,18 +31,19 @@ sed -i 's/^#PCRERecMatchLimit .*$/PCRERecMatchLimit '"$PCRE_RECMATCHLIMIT"'/g' /
 # Use proxy for freshclam
 
 if [ -n "$PROXY_SERVER" ]; then
-  sed -i 's~^#HTTPProxyServer .*~HTTPProxyServer '"$PROXY_SERVER"'~g' /etc/clamav/freshclam.conf
+  sed -i 's~^#HTTPProxyServer .*~HTTPProxyServer '"$PROXY_SERVER"'~g' /clamav/etc/freshclam.conf
 
     # It's not required, but if they also provided a port, then configure it
 
     if [ -n "$PROXY_PORT" ]; then
-        sed -i 's/^#HTTPProxyPort .*$/HTTPProxyPort '"$PROXY_PORT"'/g' /etc/clamav/freshclam.conf
+        sed -i 's/^#HTTPProxyPort .*$/HTTPProxyPort '"$PROXY_PORT"'/g' /clamav/etc/freshclam.conf
     fi
 
     # It's not required, but if they also provided a username, then configure both the username and password
     if [ -n "$PROXY_USERNAME" ]; then
-        sed -i 's/^#HTTPProxyUsername .*$/HTTPProxyUsername '"$PROXY_USERNAME"'/g' /etc/clamav/freshclam.conf
-        sed -i 's~^#HTTPProxyPassword .*~HTTPProxyPassword '"$PROXY_PASSWORD"'~g' /etc/clamav/freshclam.conf
+        sed -i 's/^#HTTPProxyUsername .*$/HTTPProxyUsername '"$PROXY_USERNAME"'/g' /clamav/etc/freshclam.conf
+        sed -i 's~^#HTTPProxyPassword .*~HTTPProxyPassword '"$PROXY_PASSWORD"'~g' /clamav/etc/freshclam.conf
+        chmod 0700 /clamav/etc/freshclam.conf
     fi
 fi
 
