@@ -418,10 +418,14 @@ func main() {
 
 	if opts["SSL_CERT"] == "" {
 		opts["SSL_CERT"] = "/etc/ssl/clamav-rest/server.crt"
+	} else {
+		log.Printf("Using ssl cert: %v", opts["SSL_CERT"])
 	}
 
 	if opts["SSL_KEY"] == "" {
 		opts["SSL_KEY"] = "/etc/ssl/clamav-rest/server.key"
+	} else {
+		log.Printf("Using ssl key: %v", opts["SSL_KEY"])
 	}
 
 	log.Println("Starting clamav rest bridge")
