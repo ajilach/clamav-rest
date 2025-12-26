@@ -104,14 +104,3 @@ jobs:
           docker run --rm ${{ env.REGISTRY_IMAGE }}:sha-${GITHUB_SHA::7} --help || true
           echo "✅ Image validation completed"
 
-    #  - name: Comment PR
-    #    uses: actions/github-script@v8
-    #    if: github.event_name == 'pull_request'
-    #    with:
-    #      script: |
-    #        github.rest.issues.createComment({
-    #          issue_number: context.issue.number,
-    #          owner: context.repo.owner,
-    #          repo: context.repo.repo,
-    #          body: '✅ Docker images built successfully for all platforms!'
-    #        })
