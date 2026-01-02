@@ -47,6 +47,7 @@ if [ -n "$PROXY_SERVER" ]; then
         fi
         sed -i 's/^#HTTPProxyUsername .*$/HTTPProxyUsername '"$PROXY_USERNAME"'/g' /clamav/etc/freshclam.conf
         sed -i 's~^#HTTPProxyPassword .*~HTTPProxyPassword '"$PROXY_PASSWORD"'~g' /clamav/etc/freshclam.conf
+        # Freshclam requires 0700 permissions if a password is set in the config.
         chmod 0700 /clamav/etc/freshclam.conf
     fi
 fi
