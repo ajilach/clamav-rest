@@ -41,6 +41,10 @@ if [ -n "$PROXY_SERVER" ]; then
 
     # It's not required, but if they also provided a username, then configure both the username and password
     if [ -n "$PROXY_USERNAME" ]; then
+        if [ -z "$PROXY_PASSWORD" ]; then
+            echo "ERROR: PROXY_PASSWORD must be set when PROXY_USERNAME is provided." >&2
+            exit 1
+        fi
         sed -i 's/^#HTTPProxyUsername .*$/HTTPProxyUsername '"$PROXY_USERNAME"'/g' /clamav/etc/freshclam.conf
         sed -i 's~^#HTTPProxyPassword .*~HTTPProxyPassword '"$PROXY_PASSWORD"'~g' /clamav/etc/freshclam.conf
         chmod 0700 /clamav/etc/freshclam.conf
