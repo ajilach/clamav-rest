@@ -33,16 +33,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.1
-        with:
-          fetch-depth: 0
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.9.0
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
+      - name: Show nixpkgs version
+        run: nix-instantiate --eval -E '(import <nixpkgs> {}).lib.version'
+
       - name: Build with nix-build
-        run: nix-build
+        run: |
+          nix-build --argstr version "$(git describe --always --tags)"
 
       - name: Validate binary
         run: |

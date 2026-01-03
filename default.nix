@@ -1,13 +1,8 @@
 {
   pkgs ? import <nixpkgs> {},
+  version ? "0.0.0+unknown",
 }: let
-  inherit (pkgs) lib git buildGoModule runCommand;
-  version =
-    builtins.readFile (runCommand "get-git-tag" {nativeBuildInputs = [git];}
-      "git --git-dir=${./.git} describe --always --tags | tr -d '\n' > $out");
-  revision =
-    builtins.readFile (runCommand "get-git-revision" {nativeBuildInputs = [git];}
-      "git --git-dir=${./.git} rev-parse HEAD | tr -d '\n' > $out");
+  inherit (pkgs) lib buildGoModule;
 in
   buildGoModule (finalAttrs: {
     inherit version;
@@ -18,15 +13,8 @@ in
       fileset = lib.fileset.gitTracked ./.;
     };
 
-    vendorHash = "sha256-akM/oHaSsuqucPQEY2434NDdPLcNVdcWZL4Zs6H0Ky8=";
-
     proxyVendor = true;
-    ldflags = [
-      "-s"
-      "-w"
-      "-X main.Version=${finalAttrs.version}"
-      "-X main.Commit=${revision}"
-    ];
+    vendorHash = "sha256-akM/oHaSsuqucPQEY2434NDdPLcNVdcWZL4Zs6H0Ky8=";
 
     meta = with lib; {
       description = "ClamAV virus/malware scanner with REST API. ";
