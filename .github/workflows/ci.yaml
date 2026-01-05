@@ -27,6 +27,25 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.test.yml down -v
 
+  nix-build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.9.0
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Show nixpkgs version
+        run: nix-instantiate --eval -E '(import <nixpkgs> {}).lib.version'
+
+      - name: Build with nix-build
+        run: |
+          nix-build --argstr version "$(git describe --always --tags)"
+
   build:
     runs-on: ubuntu-latest
     needs: test
@@ -103,4 +122,3 @@ jobs:
           # Test that the image runs
           docker run --rm ${{ env.REGISTRY_IMAGE }}:sha-${GITHUB_SHA::7} --help || true
           echo "✅ Image validation completed"
-
