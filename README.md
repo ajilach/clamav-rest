@@ -31,6 +31,7 @@ ClamAV virus/malware scanner with REST API. This is a two in one docker image wh
     - [Running tests in a container](#running-tests-in-a-container)
     - [Running tests with Python locally](#running-tests-with-python-locally)
   - [Release Notes](#release-notes)
+- [NixOS Support](#nixos-support)
 - [Deprecations](#deprecations)
   - [`/scan` endpoint](#scan-endpoint)
     - [Differences between `/scan` and `/v2/scan`](#differences-between-scan-and-v2scan)
@@ -343,6 +344,18 @@ You can then deactivate the Python environment with `deactivate`, and shutdown t
 For detailed release notes, changelogs, and version history, please see our [Releases page](https://github.com/ajilach/clamav-rest/releases).
 
 We follow [Semantic Versioning](https://semver.org/) and use [Conventional Commits](https://www.conventionalcommits.org/) to automatically generate changelogs.
+
+## NixOS Support
+
+This project provides a `default.nix` derivation that allows you to build the clamav-rest binary using Nix:
+
+```bash
+nix-build
+```
+
+The resulting binary will be available in the `./result/bin/` directory.
+
+**Note:** NixOS support is provided on a **best effort** basis. The derivation is maintained as a convenience for the Nix community, but may be dropped in future releases if it requires excessive maintenance or becomes incompatible with the project's development workflow.
 
 ## Deprecations
 
