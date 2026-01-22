@@ -230,7 +230,6 @@ func scanner(w http.ResponseWriter, r *http.Request, version int) {
 				}
 				continue
 			}
-
 			log.Printf("Started scanning: %v\n", part.FileName())
 			var abort chan bool
 			response, err := c.ScanStream(part, abort)
@@ -294,7 +293,8 @@ func getHTTPStatusByClamStatus(result *clamd.ScanResult) int {
 	case clamd.RES_ERROR:
 		return http.StatusBadRequest // 400
 	case clamd.RES_PARSE_ERROR:
-		if result.Description == "File size limit exceeded" {
+		// log.Printf("result.Raw: %v\n", result.Raw)
+		if strings.Contains(result.Raw, "size limit") || strings.Contains(result.Description, "size limit") {
 			return http.StatusRequestEntityTooLarge // 413
 		} else {
 			return http.StatusPreconditionFailed // 412
