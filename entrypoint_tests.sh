@@ -13,8 +13,8 @@ sed -i 's/^#\?Checks .*$/Checks '"$SIGNATURE_CHECKS"'/g' /clamav/etc/freshclam.c
 
 # Replace values with environment variables in clamd.conf
 sed -i 's/^#MaxScanSize .*$/MaxScanSize '"$MAX_SCAN_SIZE"'/g' /clamav/etc/clamd.conf
-sed -i 's/^#StreamMaxLength .*$/StreamMaxLength '"$MAX_FILE_SIZE"'/g' /clamav/etc/clamd.conf
-sed -i 's/^#MaxFileSize .*$/MaxFileSize '"$MAX_FILE_SIZE"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#StreamMaxLength .*$/StreamMaxLength 10M/g' /clamav/etc/clamd.conf #'"$MAX_FILE_SIZE"'
+sed -i 's/^#MaxFileSize .*$/MaxFileSize 10M/g' /clamav/etc/clamd.conf #$MAX_FILE_SIZE - test case to make sure 413 on filesize exceeded works.
 sed -i 's/^#MaxRecursion .*$/MaxRecursion '"$MAX_RECURSION"'/g' /clamav/etc/clamd.conf
 sed -i 's/^#MaxFiles .*$/MaxFiles '"$MAX_FILES"'/g' /clamav/etc/clamd.conf
 sed -i 's/^#MaxEmbeddedPE .*$/MaxEmbeddedPE '"$MAX_EMBEDDEDPE"'/g' /clamav/etc/clamd.conf

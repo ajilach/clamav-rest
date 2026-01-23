@@ -294,7 +294,7 @@ func getHTTPStatusByClamStatus(result *clamd.ScanResult) int {
 	case clamd.RES_ERROR:
 		return http.StatusBadRequest // 400
 	case clamd.RES_PARSE_ERROR:
-		if result.Description == "File size limit exceeded" {
+		if strings.Contains(result.Raw, "size limit") || strings.Contains(result.Description, "size limit") {
 			return http.StatusRequestEntityTooLarge // 413
 		} else {
 			return http.StatusPreconditionFailed // 412

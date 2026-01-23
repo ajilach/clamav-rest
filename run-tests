@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 
 until curl -s -f -o /dev/null "http://localhost:9000/"
@@ -13,4 +13,22 @@ pip install -r tests/requirements.txt
 res=$(behave tests/features)
 echo "$res"
 numberOfFailedSteps=$(echo "$res" | awk '/[0-9]+\ssteps\spassed,\s[0-9]+\sfailed/ {print $4}') 
-exit $(($numberOfFailedSteps))
+numberOfErroredSteps=$(echo "$res" | awk '/[0-9]+\ssteps\spassed,\s[0-9]+\sfailed,\s[0-9]+\serror/ {print $6}')
+numberOfSkippedSteps=$(echo "$res" | awk '/[0-9]+\ssteps\spassed,\s[0-9]+\sfailed,\s[0-9]+\sskipped/ {print $6}')
+numberOfUndefinedSteps=$(echo "$res" | awk '/[0-9]+\ssteps\spassed,\s[0-9]+\sfailed,\s[0-9]+\s[a-z]+,\s[0-9]+\sundefined/ {print $8}')
+if [[ -z $numberOfFailedSteps || ! $numberOfFailedSteps =~ ^-?[0-9]+$ ]]; then
+  numberOfFailedSteps=0
+fi
+if [[ -z $numberOfErroredSteps || ! $numberOfErroredSteps =~ ^-?[0-9]+$ ]]; then
+  numberOfErroredSteps=0
+fi
+if [[ -z $numberOfSkippedSteps || ! $numberOfSkippedSteps =~ ^-?[0-9]+$ ]]; then
+  numberOfSkippedSteps=0
+fi
+if [[ -z $numberOfUndefinedSteps || ! $numberOfUndefinedSteps =~ ^-?[0-9]+$ ]]; then
+  numberOfUndefinedSteps=0
+fi
+echo "number of errored steps: $numberOfErroredSteps"
+echo "number of skipped steps: $numberOfSkippedSteps"
+echo "number of undefined steps: $numberOfUndefinedSteps"
+exit $(($numberOfFailedSteps + $numberOfErroredSteps + $numberOfSkippedSteps + $numberOfUndefinedSteps))
