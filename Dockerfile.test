@@ -14,6 +14,7 @@ FROM docker.io/python:3-alpine3.21
 
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
+
 # Update & Install tzdata
 RUN apk update && apk upgrade && apk add --no-cache tzdata
 
