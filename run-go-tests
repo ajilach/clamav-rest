@@ -1,0 +1,18 @@
+#!/bin/bash
+
+
+until curl -s -f -o /dev/null "http://localhost:9000/"
+do
+  echo "Tests are waiting for the rest bridge to start..."
+  sleep 5
+done
+
+res=$(go test -json ./...)
+filteredRes=$(echo "$res" | grep '"Action":"fail"' | grep '"Test":')
+echo "$filteredRes"
+# uncomment to get verbose test output:
+#echo "$res"
+
+numberOfFailedTests=$(echo "$res" | jq -r 'select(.Action=="fail" and .Test != null)' | jq -s 'length')
+
+exit $(($numberOfFailedTests))

@@ -1,4 +1,4 @@
-FROM golang:alpine3.21 AS build
+FROM golang:alpine3.23 AS build
 
 # Update libraries
 RUN apk update && apk upgrade
@@ -9,11 +9,11 @@ WORKDIR /go/src
 # Build go package
 ADD . /go/src/clamav-rest/
 RUN cd /go/src/clamav-rest && go mod tidy && go build -v
-
-FROM docker.io/python:3-alpine3.21
+#FROM docker.io/python:3-alpine3.23
 
 # Copy compiled clamav-rest binary from build container to production container
-COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
+RUN cp /go/src/clamav-rest/clamav-rest /usr/bin/ 
+#--from=build
 
 # Update & Install tzdata
 RUN apk update && apk upgrade && apk add --no-cache tzdata
@@ -29,7 +29,7 @@ ENV TZ=Europe/Zurich
 ADD ./server.* /etc/ssl/clamav-rest/
 
 # Install ClamAV
-RUN apk --no-cache add clamav clamav-libunrar \
+RUN apk --no-cache add clamav go clamav-libunrar jq \
     && mkdir /run/clamav \
     && chown clamav:clamav /run/clamav 
 # cURL added for tests. Comment this out in production
@@ -46,7 +46,8 @@ COPY entrypoint.sh /usr/bin/
 
 RUN mkdir -p /clamav/etc \
     && mkdir -p /clamav/data \
-    && mkdir -p /clamav/tmp 
+    && mkdir -p /clamav/tmp \
+    && mkdir -p /clamav/test
 
 RUN chown -R clamav:clamav /clamav \
     && chown -R clamav:clamav /var/log/clamav \
@@ -58,6 +59,9 @@ echo 'hello world' > /clamav/tmp/ok/test.txt
 
 COPY eicar.test /clamav/tmp/virus/
 
+# Make go tests cache directory writable
+RUN mkdir -p /go/pkg/mod/cache/  \
+    && ln -s /clamav/test /go/pkg/mod/cache/download
 ENV PORT=9000
 ENV SSL_PORT=9443
 ENV MAX_SCAN_SIZE=100M
