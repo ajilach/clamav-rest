@@ -24,7 +24,7 @@ func TestScanFileHandler_NonVirus(t *testing.T) {
 }
 
 // Test scanFileHandler, should return 406
-func TestScanFileHAndler_WithVirus(t *testing.T) {
+func TestScanFileHandler_WithVirus(t *testing.T) {
 	res, err := c.Get(baseURL.String() + "/scanFile?path=/clamav/tmp/virus/eicar.test")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusNotAcceptable, res.StatusCode)
