@@ -8,11 +8,19 @@ do
 done
 
 res=$(go test -json ./...)
-filteredRes=$(echo "$res" | grep '"Action":"fail"' | grep '"Test":')
-echo "$filteredRes"
+
+failedTestOutput=$(printf '%s\n' "$res" | jq -r 'select(.Action=="fail" and .Test) | .Test')
+okTestOutput=$(printf '%s\n' "$res" | jq -r 'select(.Action=="pass" and .Test) | .Test')
+numberOfFailedTests=$(echo $failedTestOutput | wc -l | awk '{print $1}')
+
 # uncomment to get verbose test output:
 #echo "$res"
 
-numberOfFailedTests=$(echo "$res" | jq -r 'select(.Action=="fail" and .Test != null)' | jq -s 'length')
-
+echo "Pass:"
+echo "$okTestOutput"
+if [[ $failedTestOutput ]]
+then
+  echo "Fail:"
+  echo "$failedTestOutput"
+fi
 exit $(($numberOfFailedTests))
