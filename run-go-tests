@@ -11,7 +11,7 @@ res=$(go test -json ./...)
 
 failedTestOutput=$(printf '%s\n' "$res" | jq -r 'select(.Action=="fail" and .Test) | .Test')
 okTestOutput=$(printf '%s\n' "$res" | jq -r 'select(.Action=="pass" and .Test) | .Test')
-numberOfFailedTests=$(echo $failedTestOutput | wc -l | awk '{print $1}')
+numberOfFailedTests=$(echo "$failedTestOutput" | wc -l | awk '{print $1}')
 
 # uncomment to get verbose test output:
 #echo "$res"
@@ -22,5 +22,7 @@ if [[ $failedTestOutput ]]
 then
   echo "Fail:"
   echo "$failedTestOutput"
+else
+  numberOfFailedTests=""
 fi
 exit $(($numberOfFailedTests))
