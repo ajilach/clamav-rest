@@ -60,8 +60,10 @@ echo 'hello world' > /clamav/tmp/ok/test.txt
 COPY eicar.test /clamav/tmp/virus/
 
 # Make go tests cache directory writable
-RUN mkdir -p /go/pkg/mod/cache/  \
-    && ln -s /clamav/test /go/pkg/mod/cache/download
+RUN mkdir -p /go/pkg/mod/cache  \
+    && ln -s /clamav/test /go/pkg/mod/cache/download \
+    && chown -R clamav:clamav /go/pkg/mod/cache
+
 ENV PORT=9000
 ENV SSL_PORT=9443
 ENV MAX_SCAN_SIZE=100M
