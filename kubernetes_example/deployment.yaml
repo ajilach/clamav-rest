@@ -26,13 +26,13 @@ spec:
         image: docker.io/ajilaag/clamav-rest:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 9443        
+        - containerPort: 9443
         env:
         - name: MAX_FILE_SIZE
           valueFrom:
             configMapKeyRef:
               name: clamav-rest-service-config
-              key: MAX_FILE_SIZE  
+              key: MAX_FILE_SIZE
         resources:
           requests:
             cpu: 100m
@@ -55,11 +55,26 @@ spec:
             port: 9443
           initialDelaySeconds: 30
           periodSeconds: 60
-      # optional: persisting the data directory
-      #   volumeMounts:
-      #   - name: clamav-data
-      #     mountPath: /clamav/data
+        # optional: mount TLS certs for HTTPS (port 9443)
+        # volumeMounts:
+        # - name: tls-certs
+        #   mountPath: /etc/ssl/clamav-rest
+        #   readOnly: true
+        # optional: persisting the data directory
+        # - name: clamav-data
+        #   mountPath: /clamav/data
+      # optional: mount TLS certs from a Kubernetes secret
+      # kubectl create secret tls clamav-rest-tls --cert=server.crt --key=server.key -n clamav-rest
       # volumes:
+      # - name: tls-certs
+      #   secret:
+      #     secretName: clamav-rest-tls
+      #     items:
+      #     - key: tls.crt
+      #       path: server.crt
+      #     - key: tls.key
+      #       path: server.key
+      # optional: persisting the data directory
       # - name: clamav-data
       #   persistentVolumeClaim:
       #     claimName: my-pvc

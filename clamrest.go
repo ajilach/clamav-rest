@@ -476,16 +476,23 @@ func main() {
 	}
 
 	if opts["SSL_PORT"] != "" {
-		// Configure the HTTPS server, if SSL_PORT is set
-		tlsServer := &http.Server{
-			Addr:    fmt.Sprintf(":%s", opts["SSL_PORT"]),
-			Handler: handler,
-		}
+		// Check if SSL cert and key files exist before starting TLS
+		if _, err := os.Stat(opts["SSL_CERT"]); err != nil {
+			log.Printf("SSL cert not found at %s, skipping HTTPS server", opts["SSL_CERT"])
+		} else if _, err := os.Stat(opts["SSL_KEY"]); err != nil {
+			log.Printf("SSL key not found at %s, skipping HTTPS server", opts["SSL_KEY"])
+		} else {
+			// Configure the HTTPS server, if SSL_PORT is set
+			tlsServer := &http.Server{
+				Addr:    fmt.Sprintf(":%s", opts["SSL_PORT"]),
+				Handler: handler,
+			}
 
-		// Start the HTTPS server in a goroutine
-		go func() {
-			log.Fatal(tlsServer.ListenAndServeTLS(opts["SSL_CERT"], opts["SSL_KEY"]))
-		}()
+			// Start the HTTPS server in a goroutine
+			go func() {
+				log.Fatal(tlsServer.ListenAndServeTLS(opts["SSL_CERT"], opts["SSL_KEY"]))
+			}()
+		}
 	}
 
 	// Start the HTTP server

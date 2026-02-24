@@ -1,4 +1,4 @@
-FROM golang:alpine3.21 AS build
+FROM golang:1.25-alpine AS build
 
 # Update libraries
 RUN apk update && apk upgrade
@@ -26,14 +26,15 @@ COPY clamavlogrotate /etc/logrotate.d/clamav
 # Set timezone to Europe/Zurich
 ENV TZ=Europe/Zurich
 
-ADD ./server.* /etc/ssl/clamav-rest/
+# Create SSL directory for runtime-generated or mounted certificates
+RUN mkdir -p /etc/ssl/clamav-rest
 
 # Install ClamAV
 RUN apk --no-cache add clamav clamav-libunrar \
     && mkdir /run/clamav \
-    && chown clamav:clamav /run/clamav 
-# cURL added for tests. Comment this out in production
-RUN apk --no-cache add curl
+    && chown clamav:clamav /run/clamav
+# cURL and openssl added for tests
+RUN apk --no-cache add curl openssl
 
 # Configure clamAV to run in foreground with port 3310
 RUN sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/clamd.conf \
@@ -50,7 +51,8 @@ RUN mkdir -p /clamav/etc \
 
 RUN chown -R clamav:clamav /clamav \
     && chown -R clamav:clamav /var/log/clamav \
-    && chown -R clamav:clamav /run/clamav 
+    && chown -R clamav:clamav /run/clamav \
+    && chown -R clamav:clamav /etc/ssl/clamav-rest
 
 # Add test data to test the /scanPath endpoint
 RUN mkdir -p /clamav/tmp/ok /clamav/tmp/virus && \
