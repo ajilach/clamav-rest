@@ -18,6 +18,8 @@ ClamAV virus/malware scanner with REST API. This is a two in one docker image wh
   - [Scanning endpoints](#scanning-endpoints)
 - [Configuration](#configuration)
   - [Environment Variables](#environment-variables)
+  - [TLS Certificates](#tls-certificates)
+  - [Custom freshclam.conf](#custom-freshclamconf)
   - [Networking](#networking)
   - [Running on Kubernetes](#running-on-kubernetes)
 - [Maintenance / Monitoring](#maintenance--monitoring)
@@ -200,6 +202,56 @@ Below is the complete list of available options that can be used to customize yo
 | `PROXY_PORT`          | The port for the proxy server. Default disabled (optional)                                              |
 | `PROXY_USERNAME`      | The username for the proxy server. Default disabled (optional)                                          |
 | `PROXY_PASSWORD`      | The password for the proxy server. Default disabled (optional)                                          |
+
+### TLS Certificates
+
+TLS certificates are **not** embedded in the Docker image. To enable HTTPS on port 9443, mount your own certificate and key at runtime. If no certificates are provided, the HTTPS server is gracefully skipped and only HTTP (port 9000) is available.
+
+**Docker:**
+
+```bash
+docker run -p 9000:9000 -p 9443:9443 \
+  -v /path/to/server.crt:/etc/ssl/clamav-rest/server.crt:ro \
+  -v /path/to/server.key:/etc/ssl/clamav-rest/server.key:ro \
+  -itd --name clamav-rest ajilaag/clamav-rest
+```
+
+**Kubernetes:**
+
+Create a TLS secret and mount it as a volume. See the commented-out examples in `kubernetes_example/deployment.yaml`:
+
+```bash
+kubectl create secret tls clamav-rest-tls \
+  --cert=server.crt --key=server.key -n clamav-rest
+```
+
+You can also override the certificate paths using the `SSL_CERT` and `SSL_KEY` environment variables.
+
+### Custom freshclam.conf
+
+For advanced freshclam configuration (e.g., custom database mirrors, private mirrors, or settings not exposed via environment variables), you can provide your own `freshclam.conf` file.
+
+When a custom `freshclam.conf` is detected, the entrypoint skips all freshclam-related configuration. This means the following environment variables are **ignored** when a custom config is provided: `SIGNATURE_CHECKS`, `PROXY_SERVER`, `PROXY_PORT`, `PROXY_USERNAME`, `PROXY_PASSWORD`.
+
+Your custom `freshclam.conf` must include these directives for the container to function correctly:
+
+```
+Foreground yes
+DatabaseDirectory /clamav/data
+NotifyClamd /clamav/etc/clamd.conf
+```
+
+**Docker:**
+
+```bash
+docker run -p 9000:9000 \
+  -v /path/to/freshclam.conf:/clamav/etc/freshclam.conf:ro \
+  -itd --name clamav-rest ajilaag/clamav-rest
+```
+
+**Kubernetes:**
+
+Add the configuration to a ConfigMap and mount it as a volume. See the commented-out examples in `kubernetes_example/configmap.yaml` and `kubernetes_example/deployment.yaml`.
 
 ### Networking
 

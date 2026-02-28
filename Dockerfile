@@ -1,4 +1,4 @@
-FROM golang:alpine3.21 AS build
+FROM golang:1.25-alpine AS build
 
 # Update libraries
 RUN apk update && apk upgrade
@@ -26,7 +26,8 @@ COPY clamavlogrotate /etc/logrotate.d/clamav
 # Set timezone to Europe/Zurich
 ENV TZ=Europe/Zurich
 
-ADD ./server.* /etc/ssl/clamav-rest/
+# Create SSL directory for runtime-mounted certificates
+RUN mkdir -p /etc/ssl/clamav-rest
 
 # Install ClamAV
 RUN apk --no-cache add clamav clamav-libunrar \
