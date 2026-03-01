@@ -16,11 +16,11 @@ func TestScanFileHandler_NonVirus(t *testing.T) {
 	}
 	res, err := c.Get(url.String())
 	if err != nil {
-		t.Fatalf("TestScanFileHandler_NonVirus failed, wanted %d, got err: %v", want, err)
+		t.Errorf("TestScanFileHandler_NonVirus failed, wanted %d, got err: %v", want, err)
 	}
 	got := res.StatusCode
 	if got != want {
-		t.Fatalf("ScanFileTestScanFileHandler_NonVirus failed, wanted %d, got %d", want, got)
+		t.Errorf("ScanFileTestScanFileHandler_NonVirus failed, wanted %d, got %d", want, got)
 	}
 }
 
@@ -35,10 +35,10 @@ func TestScanFileHandler_WithVirus(t *testing.T) {
 	}
 	res, err := c.Get(url.String())
 	if err != nil {
-		t.Fatalf("TestScanFileHandler_WithVirus failed, wanted %d, got err: %v", want, err)
+		t.Errorf("TestScanFileHandler_WithVirus failed, wanted %d, got err: %v", want, err)
 	}
 	got := res.StatusCode
 	if got != want {
-		t.Fatalf("TestScanFileHandler_WithVirus failed, wanted %d, got %v", want, got)
+		t.Errorf("TestScanFileHandler_WithVirus failed, wanted %d, got %v", want, got)
 	}
 }
