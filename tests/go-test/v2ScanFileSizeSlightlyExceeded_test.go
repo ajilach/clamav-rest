@@ -15,6 +15,7 @@ func TestFileSizeSlightlyExceeded_RequestEntityTooLarge(t *testing.T) {
 		t.Fatalf("TestFileSizeSlightlyExceeded_RequestEntityTooLarge failed, unable to create testfile, %v", err)
 	}
 	defer file.Close()
+	defer cleanup("/clamav/tmp/testfile.txt")
 	_, err = io.CopyN(file, rand.Reader, 10*1024*1024+10) // 10+ MB
 	if err != nil {
 		t.Fatalf("TestFileSizeSlightlyExceeded_RequestEntityTooLarge failed, unable to write test file, %v", err)

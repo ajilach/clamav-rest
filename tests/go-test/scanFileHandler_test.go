@@ -27,7 +27,13 @@ func TestScanFileHandler_NonVirus(t *testing.T) {
 // Test scanFileHandler, should return 406
 func TestScanFileHandler_WithVirus(t *testing.T) {
 	want := http.StatusNotAcceptable
-	res, err := c.Get(baseURL.String() + "/scanFile?path=/clamav/tmp/virus/eicar.test")
+	qParams := make(map[string]string)
+	qParams["path"] = "/clamav/tmp/virus/eicar.test"
+	url, err := getURL(&qParams, "scanFile")
+	if err != nil {
+		t.Fatalf("TestScanFileHandler_WithVirus failed when creating url, %v", err)
+	}
+	res, err := c.Get(url.String())
 	if err != nil {
 		t.Fatalf("TestScanFileHandler_WithVirus failed, wanted %d, got err: %v", want, err)
 	}

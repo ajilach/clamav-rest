@@ -8,7 +8,13 @@ import (
 // Test scanPathHandler, should return 200
 func TestScanPathHandler_NonVirus(t *testing.T) {
 	want := http.StatusOK
-	res, err := c.Get(baseURL.String() + "/scanPath?path=/clamav/tmp/ok")
+	qParams := make(map[string]string)
+	qParams["path"] = "/clamav/tmp/ok"
+	url, err := getURL(&qParams, "scanPath")
+	if err != nil {
+		t.Fatalf("TestScanPathHandler_NonVirus failed when creating url, %v", err)
+	}
+	res, err := c.Get(url.String())
 	if err != nil {
 		t.Fatalf("TestScanPathHandler_NonVirus failed, wanted %d, got err: %v", want, err)
 	}
@@ -21,7 +27,13 @@ func TestScanPathHandler_NonVirus(t *testing.T) {
 // Test scanPathHandler, should return 406
 func TestScanPathHandler_WithVirus(t *testing.T) {
 	want := http.StatusNotAcceptable
-	res, err := c.Get(baseURL.String() + "/scanPath?path=/clamav/tmp/virus")
+	qParams := make(map[string]string)
+	qParams["path"] = "/clamav/tmp/virus"
+	url, err := getURL(&qParams, "scanPath")
+	if err != nil {
+		t.Fatalf("TestScanPathHandler_WithVirus failed when creating url, %v", err)
+	}
+	res, err := c.Get(url.String())
 	if err != nil {
 		t.Fatalf("TestScanPathHandler_WithVirus failed, wanted %d, got err: %v", want, err)
 	}

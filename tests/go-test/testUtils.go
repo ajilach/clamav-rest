@@ -61,3 +61,7 @@ func getURL(qParams *map[string]string, pathFragments ...string) (*url.URL, erro
 	}
 	return reqURL, nil
 }
+
+func cleanup(file string) {
+	_ = os.Remove(file)
+}
