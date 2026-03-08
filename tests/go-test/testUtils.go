@@ -1,4 +1,5 @@
 // Package gotest is used to do end-to-end tests written in go, against the clamav-rest api.
+// If setup code fails, t.Fatalf() is used, if call to clamav-rest or response fails of is not expected, t.Errorf() is used.
 package gotest
 
 import (
@@ -18,23 +19,29 @@ var (
 	c = http.Client{}
 )
 
-func getReqWithFile(file *os.File) (*http.Request, error) {
-	// make sure file offset is at the beginning of the file
-	_, err := file.Seek(0, io.SeekStart)
-	if err != nil {
-		return nil, err
-	}
+func getReqWithFile(file ...*os.File) (*http.Request, error) {
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
+	for _, f := range file {
 
-	part, err := writer.CreateFormFile("file", file.Name())
+		// make sure file offset is at the beginning of the file
+		_, err := f.Seek(0, io.SeekStart)
+		if err != nil {
+			return nil, err
+		}
+
+		part, err := writer.CreateFormFile("file", f.Name())
+		if err != nil {
+			return nil, err
+		}
+		if _, err := io.Copy(part, f); err != nil {
+			return nil, err
+		}
+	}
+	err := writer.Close()
 	if err != nil {
 		return nil, err
 	}
-	if _, err := io.Copy(part, file); err != nil {
-		return nil, err
-	}
-	writer.Close()
 	req, err := http.NewRequest("POST", "", &body)
 	if err != nil {
 		return nil, err
