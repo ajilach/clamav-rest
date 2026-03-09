@@ -13,8 +13,8 @@ failedTestOutput=$(printf '%s\n' "$res" | jq -r 'select(.Action=="fail" and .Tes
 okTestOutput=$(printf '%s\n' "$res" | jq -r 'select(.Action=="pass" and .Test) | .Test')
 numberOfFailedTests=$(echo "$failedTestOutput" | wc -l | awk '{print $1}')
 
-# uncomment to get verbose test output:
-#echo "$res"
+# DEBUG output:
+echo "$res"
 
 echo "Pass:"
 echo "$okTestOutput"
