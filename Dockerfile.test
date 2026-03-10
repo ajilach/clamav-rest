@@ -1,4 +1,5 @@
-FROM golang:1.26-alpine AS build
+ARG GO_VERSION=1.26.0
+FROM golang:${GO_VERSION}-alpine AS build
 
 # Update libraries
 RUN apk update && apk upgrade
