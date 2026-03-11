@@ -33,7 +33,7 @@ RUN mkdir -p /etc/ssl/clamav-rest
 # Install ClamAV
 RUN apk --no-cache add clamav clamav-libunrar \
     && mkdir /run/clamav \
-    && chown clamav:clamav /run/clamav 
+    && chown clamav:clamav /run/clamav
 
 
 # Configure clamAV to run in foreground with port 3310
@@ -47,11 +47,11 @@ COPY entrypoint.sh /usr/bin/
 
 RUN mkdir -p /clamav/etc \
     && mkdir -p /clamav/data \
-    && mkdir -p /clamav/tmp 
+    && mkdir -p /clamav/tmp
 
 RUN chown -R clamav:clamav /clamav \
     && chown -R clamav:clamav /var/log/clamav \
-    && chown -R clamav:clamav /run/clamav 
+    && chown -R clamav:clamav /run/clamav
 
 
 ENV PORT=9000
@@ -71,6 +71,7 @@ ENV MAX_RECONNECT_TIME=30
 ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
 ENV SIGNATURE_CHECKS=2
+ENV HEALTHCHECK_MAX_SIGNATURE_AGE=48
 ENV ALLOW_ORIGINS=*
 
 USER clamav
