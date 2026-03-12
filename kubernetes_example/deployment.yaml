@@ -27,6 +27,7 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 9443
+        - containerPort: 9000
         env:
         - name: MAX_FILE_SIZE
           valueFrom:
@@ -42,17 +43,17 @@ spec:
             memory: 2500Mi
         readinessProbe:
           httpGet:
-            scheme: HTTPS
+            scheme: HTTP
             path: /
-            port: 9443
+            port: 9000
           initialDelaySeconds: 30
           periodSeconds: 20
           failureThreshold: 10
         livenessProbe:
           httpGet:
-            scheme: HTTPS
+            scheme: HTTP
             path: /
-            port: 9443
+            port: 9000
           initialDelaySeconds: 30
           periodSeconds: 60
         # optional: mount TLS certs for HTTPS (port 9443)
@@ -86,4 +87,4 @@ spec:
       - key: "node.kubernetes.io/not-ready"
         operator: "Exists"
         effect: "NoExecute"
-        tolerationSeconds: 30          
+        tolerationSeconds: 30
