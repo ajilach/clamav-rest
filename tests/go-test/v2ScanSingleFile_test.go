@@ -6,6 +6,26 @@ import (
 	"testing"
 )
 
+// Test /v2/scan with clean file
+func TestV2ScanSingleFile_NonVirus(t *testing.T) {
+	want := http.StatusOK
+	fName := "/clamav/tmp/ok/test.txt"
+	got := getResultFromFile(fName, "v2ScanSingleFile_NonVirus", t)
+	if got != want {
+		t.Errorf("v2ScanSingleFile_NonVirus failed, wanted %v, got %v", want, got)
+	}
+}
+
+// Test /v2/scan with eicar.test
+func TestV2ScanSingleFile_WithVirus(t *testing.T) {
+	want := http.StatusNotAcceptable
+	fName := "/clamav/tmp/virus/eicar.test"
+	got := getResultFromFile(fName, "v2ScanSingleFile_WithVirus", t)
+	if got != want {
+		t.Errorf("v2ScanSingleFile_NonVirus failed, wanted %v, got %v", want, got)
+	}
+}
+
 func getResultFromFile(fName string, testName string, t *testing.T) int {
 	file, err := os.Open(fName)
 	if err != nil {
@@ -26,22 +46,4 @@ func getResultFromFile(fName string, testName string, t *testing.T) int {
 		t.Errorf("%v failed when calling clamav-rest, %v", testName, err)
 	}
 	return resp.StatusCode
-}
-
-func TestV2ScanSingleFile_NonVirus(t *testing.T) {
-	want := http.StatusOK
-	fName := "/clamav/tmp/ok/test.txt"
-	got := getResultFromFile(fName, "v2ScanSingleFile_NonVirus", t)
-	if got != want {
-		t.Errorf("v2ScanSingleFile_NonVirus failed, wanted %v, got %v", want, got)
-	}
-}
-
-func TestV2ScanSingleFile_WithVirus(t *testing.T) {
-	want := http.StatusNotAcceptable
-	fName := "/clamav/tmp/virus/eicar.test"
-	got := getResultFromFile(fName, "v2ScanSingleFile_WithVirus", t)
-	if got != want {
-		t.Errorf("v2ScanSingleFile_NonVirus failed, wanted %v, got %v", want, got)
-	}
 }
