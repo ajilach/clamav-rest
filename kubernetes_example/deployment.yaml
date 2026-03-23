@@ -22,48 +22,49 @@ spec:
       nodeSelector:
         "beta.kubernetes.io/os": linux
       containers:
-      - name: clamav-rest-service
-        image: docker.io/ajilaag/clamav-rest:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 9443
-        - containerPort: 9000
-        env:
-        - name: MAX_FILE_SIZE
-          valueFrom:
-            configMapKeyRef:
-              name: clamav-rest-service-config
-              key: MAX_FILE_SIZE
-        resources:
-          requests:
-            cpu: 100m
-            memory: 2000Mi
-          limits:
-            cpu: 200m
-            memory: 2500Mi
-        readinessProbe:
-          httpGet:
-            scheme: HTTP
-            path: /
-            port: 9000
-          initialDelaySeconds: 30
-          periodSeconds: 20
-          failureThreshold: 10
-        livenessProbe:
-          httpGet:
-            scheme: HTTP
-            path: /
-            port: 9000
-          initialDelaySeconds: 30
-          periodSeconds: 60
-        # optional: mount TLS certs for HTTPS (port 9443)
-        # volumeMounts:
-        # - name: tls-certs
-        #   mountPath: /etc/ssl/clamav-rest
-        #   readOnly: true
-        # optional: persisting the data directory
-        # - name: clamav-data
-        #   mountPath: /clamav/data
+        - name: clamav-rest-service
+          image: docker.io/ajilaag/clamav-rest:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9443
+            - containerPort: 9000
+          env:
+            - name: MAX_FILE_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: clamav-rest-service-config
+                  key: MAX_FILE_SIZE
+          resources:
+            requests:
+              cpu: 100m
+              memory: 2000Mi
+            limits:
+              cpu: 200m
+              memory: 2500Mi
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 9000
+            initialDelaySeconds: 45
+            periodSeconds: 60
+            failureThreshold: 2
+          # optional: mount TLS certs for HTTPS (port 9443)
+          # volumeMounts:
+          # - name: tls-certs
+          #   mountPath: /etc/ssl/clamav-rest
+          #   readOnly: true
+          # optional: persisting the data directory
+          # - name: clamav-data
+          #   mountPath: /clamav/data
       # optional: mount TLS certs from a Kubernetes secret
       # kubectl create secret tls clamav-rest-tls --cert=server.crt --key=server.key -n clamav-rest
       # volumes:
@@ -80,11 +81,12 @@ spec:
       #   persistentVolumeClaim:
       #     claimName: my-pvc
       tolerations:
-      - key: "node.kubernetes.io/unreachable"
-        operator: "Exists"
-        effect: "NoExecute"
-        tolerationSeconds: 30
-      - key: "node.kubernetes.io/not-ready"
-        operator: "Exists"
-        effect: "NoExecute"
-        tolerationSeconds: 30
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30
+
