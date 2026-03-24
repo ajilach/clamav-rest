@@ -3,8 +3,21 @@
   version ? "0.0.0+unknown",
 }: let
   inherit (pkgs) lib buildGoModule;
+  goMod = builtins.readFile ./go.mod;
+  goVersionLine =
+    let
+      matches = lib.filter (line: lib.hasPrefix "go " line) (lib.splitString "\n" goMod);
+    in
+      if matches == []
+      then throw "Could not find Go version in go.mod"
+      else builtins.head matches;
+  goVersion = lib.removePrefix "go " goVersionLine;
+  goVersionParts = lib.splitString "." goVersion;
+  goAttr = "go_${builtins.elemAt goVersionParts 0}_${builtins.elemAt goVersionParts 1}";
+  go =
+    lib.attrByPath [goAttr] (throw "Go package attribute ${goAttr} is not available in nixpkgs") pkgs;
 in
-  buildGoModule (finalAttrs: {
+  (buildGoModule.override {inherit go;}) (finalAttrs: {
     inherit version;
     pname = "clamav-rest";
 
@@ -14,7 +27,7 @@ in
     };
 
     proxyVendor = true;
-    vendorHash = "sha256-akM/oHaSsuqucPQEY2434NDdPLcNVdcWZL4Zs6H0Ky8=";
+    vendorHash = "sha256-wwPGs9/oI+8DopN+MIWVNwX05D4qQ2pMdWfewil4H8M=";
 
     meta = with lib; {
       description = "ClamAV virus/malware scanner with REST API. ";

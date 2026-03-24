@@ -1,4 +1,14 @@
 #!/bin/bash
+
+# Generate self-signed TLS certificate for tests if not already present
+if [ ! -f /etc/ssl/clamav-rest/server.key ] || [ ! -f /etc/ssl/clamav-rest/server.crt ]; then
+    echo "Generating self-signed TLS certificate for tests..."
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 \
+        -keyout /etc/ssl/clamav-rest/server.key \
+        -out /etc/ssl/clamav-rest/server.crt \
+        -days 1 -nodes -subj "/CN=localhost" 2>/dev/null
+fi
+
 cp /etc/clamav/* /clamav/etc/
 
 # Replace values in freshclam.conf
