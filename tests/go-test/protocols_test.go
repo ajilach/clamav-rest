@@ -43,13 +43,6 @@ func TestHTTP1_1(t *testing.T) {
 
 // Test h2c, HTTP/2 over HTTP (non-tls) with Prior knowledge
 func TestH2C(t *testing.T) {
-	// h2c is not implemented in the stdlib http.Transport, if *http.Transport.Protocols.SetHTTP2(true) and SetHTTP1(false) is used, HTTP/2 over TLS will be attempted, or it will fall back to HTTP/1.1 over non-TLS HTTP.
-	//ts := &http2.Transport{
-	//	AllowHTTP: true,
-	//	DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
-	//		return net.Dial(network, addr)
-	//	},
-	//}
 	tsp := http.DefaultTransport.(*http.Transport).Clone()
 	tsp.Protocols = new(http.Protocols)
 	tsp.Protocols.SetUnencryptedHTTP2(true)
