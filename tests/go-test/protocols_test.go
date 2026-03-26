@@ -7,8 +7,6 @@ import (
 	"net/url"
 	"os"
 	"testing"
-
-	"golang.org/x/net/http2"
 )
 
 var fileName string = "/clamav/tmp/virus/eicar.test"
@@ -20,7 +18,7 @@ func TestHTTP1_1(t *testing.T) {
 	ts.Protocols.SetHTTP1(true)
 	ts.Protocols.SetHTTP2(false)
 
-	resp, err := performCall(ts, nil, nil)
+	resp, err := performCall(ts, nil)
 	if err != nil {
 		t.Errorf("TestHTTP1_1 failed, %v", err)
 	}
@@ -49,7 +47,7 @@ func TestH2C(t *testing.T) {
 	if !tsp.Protocols.UnencryptedHTTP2() {
 		t.Errorf("TestH2C failed, tried to set H2C but failed")
 	}
-	res, err := performCall(tsp, nil, nil)
+	res, err := performCall(tsp, nil)
 	if err != nil {
 		t.Errorf("TestHTTP2 failed, %v", err)
 	}
@@ -78,7 +76,7 @@ func TestHTTP2_TLS(t *testing.T) {
 	}
 	url.Scheme = "https"
 	url.Host = net.JoinHostPort(url.Hostname(), "9443")
-	res, err := performCall(ts, nil, url)
+	res, err := performCall(ts, url)
 	if err != nil {
 		t.Errorf("TestHTTP2_TLS failed, %v", err)
 	}
@@ -92,7 +90,7 @@ func TestHTTP2_TLS(t *testing.T) {
 	}
 }
 
-func performCall(ts *http.Transport, ts2 *http2.Transport, url *url.URL) (*http.Response, error) {
+func performCall(ts *http.Transport, url *url.URL) (*http.Response, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		return nil, err
@@ -111,16 +109,8 @@ func performCall(ts *http.Transport, ts2 *http2.Transport, url *url.URL) (*http.
 	} else {
 		req.URL = url
 	}
+	client := &http.Client{Transport: ts}
 
-	if err != nil {
-		return nil, err
-	}
-	var client *http.Client
-	if ts != nil {
-		client = &http.Client{Transport: ts}
-	} else {
-		client = &http.Client{Transport: ts2}
-	}
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
