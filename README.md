@@ -159,11 +159,12 @@ In order to remain backward compatible, we allow all CORS related origins by set
 
 ### Utility endpoints
 
-| Endpoint   | Description                                                                                                                 |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `/`        | Home endpoint, returns stats for the currently running process                                                              |
-| `/version` | Returns the clamav binary version and also the version of the virus signature databases and the signature last update date. |
-| `/metrics` | Prometheus endpoint for scraping metrics.                                                                                   |
+| Endpoint       | Description                                                                                                                                                          |
+|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `/`            | Home endpoint, returns stats for the currently running process                                                                                                       |
+| `/version`     | Returns the clamav binary version and also the version of the virus signature databases and the signature last update date.                                          |
+| `/metrics`     | Prometheus endpoint for scraping metrics.                                                                                                                            |
+| `/healthcheck` | If signatures are older than HEALTHCHECK_MAX_SIGNATURE_AGE this endpoint returns status code 420, otherwise it returns 200. If Clamd is not running, it returns 500. |
 
 ### Scanning endpoints
 
@@ -181,27 +182,28 @@ In order to remain backward compatible, we allow all CORS related origins by set
 
 Below is the complete list of available options that can be used to customize your installation.
 
-| Parameter             | Description                                                                                             |
-| --------------------- | ------------------------------------------------------------------------------------------------------- |
-| `MAX_SCAN_SIZE`       | Amount of data scanned for each file. Defaults to `100M`                                                |
-| `MAX_FILE_SIZE`       | Do not scan files larger than this size. Defaults to `25M`                                              |
-| `MAX_RECURSION`       | How many nested archives to scan. Defaults to `16`                                                      |
-| `MAX_FILES`           | Number of files to scan within an archive. Defaults to `10000`                                          |
-| `MAX_EMBEDDEDPE`      | Maximum file size for embedded PE. Defaults to `10M`                                                    |
-| `MAX_HTMLNORMALIZE`   | Maximum size of HTML to normalize. Defaults to `10M`                                                    |
-| `MAX_HTMLNOTAGS`      | Maximum size of normlized HTML file to scan. Defaults to `2M`                                           |
-| `MAX_SCRIPTNORMALIZE` | Maximum size of a script to normalize. Defaults to `5M`                                                 |
-| `MAX_ZIPTYPERCG`      | Maximum size of ZIP to reanalyze type recognition. Defaults to `1M`                                     |
-| `MAX_PARTITIONS`      | How many partitions per raw disk to scan. Defaults to `50`                                              |
-| `MAX_ICONSPE`         | How many icons in PE to scan. Defaults to `100`                                                         |
-| `MAX_RECONNECT_TIME`  | Maximum timeout while waiting for ClamAV to start. Defaults to `30`                                     |
-| `PCRE_MATCHLIMIT`     | Maximum PCRE match calls. Defaults to `100000`                                                          |
-| `PCRE_RECMATCHLIMIT`  | Maximum recursive match calls to PCRE. Defaults to `2000`                                               |
-| `SIGNATURE_CHECKS`    | How many times per day to check for a new database signature. Must be between 1 and 50. Defaults to `2` |
-| `PROXY_SERVER`        | Specify a proxy for freshclam to utilize. Default disabled (optional)                                   |
-| `PROXY_PORT`          | The port for the proxy server. Default disabled (optional)                                              |
-| `PROXY_USERNAME`      | The username for the proxy server. Default disabled (optional)                                          |
-| `PROXY_PASSWORD`      | The password for the proxy server. Default disabled (optional)                                          |
+| Parameter                       | Description                                                                                             |
+|---------------------------------|---------------------------------------------------------------------------------------------------------|
+| `MAX_SCAN_SIZE`                 | Amount of data scanned for each file. Defaults to `100M`                                                |
+| `MAX_FILE_SIZE`                 | Do not scan files larger than this size. Defaults to `25M`                                              |
+| `MAX_RECURSION`                 | How many nested archives to scan. Defaults to `16`                                                      |
+| `MAX_FILES`                     | Number of files to scan within an archive. Defaults to `10000`                                          |
+| `MAX_EMBEDDEDPE`                | Maximum file size for embedded PE. Defaults to `10M`                                                    |
+| `MAX_HTMLNORMALIZE`             | Maximum size of HTML to normalize. Defaults to `10M`                                                    |
+| `MAX_HTMLNOTAGS`                | Maximum size of normlized HTML file to scan. Defaults to `2M`                                           |
+| `MAX_SCRIPTNORMALIZE`           | Maximum size of a script to normalize. Defaults to `5M`                                                 |
+| `MAX_ZIPTYPERCG`                | Maximum size of ZIP to reanalyze type recognition. Defaults to `1M`                                     |
+| `MAX_PARTITIONS`                | How many partitions per raw disk to scan. Defaults to `50`                                              |
+| `MAX_ICONSPE`                   | How many icons in PE to scan. Defaults to `100`                                                         |
+| `MAX_RECONNECT_TIME`            | Maximum timeout while waiting for ClamAV to start. Defaults to `30`                                     |
+| `PCRE_MATCHLIMIT`               | Maximum PCRE match calls. Defaults to `100000`                                                          |
+| `PCRE_RECMATCHLIMIT`            | Maximum recursive match calls to PCRE. Defaults to `2000`                                               |
+| `SIGNATURE_CHECKS`              | How many times per day to check for a new database signature. Must be between 1 and 50. Defaults to `2` |
+| `HEALTHCHECK_MAX_SIGNATURE_AGE` | Max signature age in hours for /healthcheck endpoint to return OK. Defaults to `48` hours.              |
+| `PROXY_SERVER`                  | Specify a proxy for freshclam to utilize. Default disabled (optional)                                   |
+| `PROXY_PORT`                    | The port for the proxy server. Default disabled (optional)                                              |
+| `PROXY_USERNAME`                | The username for the proxy server. Default disabled (optional)                                          |
+| `PROXY_PASSWORD`                | The password for the proxy server. Default disabled (optional)                                          |
 
 ### TLS Certificates
 
