@@ -36,11 +36,11 @@ spec:
                   key: MAX_FILE_SIZE
           resources:
             requests:
-              cpu: 100m
+              cpu: 200m
               memory: 2000Mi
             limits:
-              cpu: 200m
-              memory: 2500Mi
+              cpu: 300m
+              memory: 3000Mi
           startupProbe:
             httpGet:
               scheme: HTTP
