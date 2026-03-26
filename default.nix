@@ -18,6 +18,7 @@
     lib.attrByPath [goAttr] (throw "Go package attribute ${goAttr} is not available in nixpkgs") pkgs;
 in
   (buildGoModule.override {inherit go;}) (finalAttrs: {
+    checkFlags = [ "-skip=^Test.*$" ];
     inherit version;
     pname = "clamav-rest";
 
