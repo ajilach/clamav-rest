@@ -13,7 +13,6 @@
       else builtins.head matches;
   goVersion = lib.removePrefix "go " goVersionLine;
   goVersionParts = lib.splitString "." goVersion;
-  doCheck = false;
   goAttr = "go_${builtins.elemAt goVersionParts 0}_${builtins.elemAt goVersionParts 1}";
   go =
     lib.attrByPath [goAttr] (throw "Go package attribute ${goAttr} is not available in nixpkgs") pkgs;
@@ -30,6 +29,7 @@ in
     proxyVendor = true;
     vendorHash = "sha256-BFmkBqzxxbkRTYUot8Hf2tmCQztejSL0DK1I16Dpgh4=";
 
+    doCheck = false;
     meta = with lib; {
       description = "ClamAV virus/malware scanner with REST API. ";
       longDescription = ''
