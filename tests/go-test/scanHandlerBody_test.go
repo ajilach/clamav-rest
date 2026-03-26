@@ -7,32 +7,6 @@ import (
 	"testing"
 )
 
-// setup and make call
-func setupScanHandlerBody(fName string, t *testing.T, headers map[string]string, want int) *http.Response {
-	file, err := os.Open(fName)
-	if err != nil {
-		t.Fatalf("TestScanHandlerBody_nonVirus failed when opening test file, %v", err)
-	}
-	defer file.Close()
-	reqURL, err := getURL(nil, "scanHandlerBody")
-	if err != nil {
-		t.Fatalf("TestScanHandlerBody_nonVirus failed, unable to create url, %v", err)
-	}
-	reader := bufio.NewReader(file)
-	req, err := http.NewRequest("POST", reqURL.String(), reader)
-	if err != nil {
-		t.Fatalf("TestScanHandlerBody_nonVirus failed, unable to create request with fileReader, %v", err)
-	}
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	resp, err := c.Do(req)
-	if err != nil {
-		t.Errorf("TestScanHandlerBody_nonVirus failed when sending request to clamav-rest, wanted %v, but got err %v", want, err)
-	}
-	return resp
-}
-
 // Test scanHandlerBody endpoint with OK file, should return 200
 func TestScanHandlerBody_nonVirus(t *testing.T) {
 	fName := "/clamav/tmp/ok/test.txt"
@@ -57,4 +31,30 @@ func TestScanHandlerBody_WithVirus(t *testing.T) {
 	if got != want {
 		t.Errorf("TestScanHandlerBody_nonVirus failed, wanted %v, got %v", want, got)
 	}
+}
+
+// setup and make call
+func setupScanHandlerBody(fName string, t *testing.T, headers map[string]string, want int) *http.Response {
+	file, err := os.Open(fName)
+	if err != nil {
+		t.Fatalf("TestScanHandlerBody_nonVirus failed when opening test file, %v", err)
+	}
+	defer file.Close()
+	reqURL, err := getURL(nil, "scanHandlerBody")
+	if err != nil {
+		t.Fatalf("TestScanHandlerBody_nonVirus failed, unable to create url, %v", err)
+	}
+	reader := bufio.NewReader(file)
+	req, err := http.NewRequest("POST", reqURL.String(), reader)
+	if err != nil {
+		t.Fatalf("TestScanHandlerBody_nonVirus failed, unable to create request with fileReader, %v", err)
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Errorf("TestScanHandlerBody_nonVirus failed when sending request to clamav-rest, wanted %v, but got err %v", want, err)
+	}
+	return resp
 }

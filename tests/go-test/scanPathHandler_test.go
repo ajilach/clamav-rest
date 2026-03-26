@@ -5,21 +5,6 @@ import (
 	"testing"
 )
 
-// setup and make call
-func setupScanPathHandler(path string, t *testing.T, want int) *http.Response {
-	qParams := make(map[string]string, 1)
-	qParams["path"] = path
-	url, err := getURL(&qParams, "scanPath")
-	if err != nil {
-		t.Fatalf("TestScanPathHandler_NonVirus failed when creating url, %v", err)
-	}
-	res, err := c.Get(url.String())
-	if err != nil {
-		t.Errorf("TestScanPathHandler_NonVirus failed, wanted %v, got err: %v", want, err)
-	}
-	return res
-}
-
 // Test scanPathHandler, should return 200
 func TestScanPathHandler_NonVirus(t *testing.T) {
 	want := http.StatusOK
@@ -40,4 +25,19 @@ func TestScanPathHandler_WithVirus(t *testing.T) {
 	if got != want {
 		t.Errorf("TestScanPathHandler_NonVirus failed, wanted %d, got %v", want, got)
 	}
+}
+
+// setup and make call
+func setupScanPathHandler(path string, t *testing.T, want int) *http.Response {
+	qParams := make(map[string]string, 1)
+	qParams["path"] = path
+	url, err := getURL(&qParams, "scanPath")
+	if err != nil {
+		t.Fatalf("TestScanPathHandler_NonVirus failed when creating url, %v", err)
+	}
+	res, err := c.Get(url.String())
+	if err != nil {
+		t.Errorf("TestScanPathHandler_NonVirus failed, wanted %v, got err: %v", want, err)
+	}
+	return res
 }
