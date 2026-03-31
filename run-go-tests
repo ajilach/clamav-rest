@@ -1,20 +1,19 @@
 #!/bin/bash
 
-
 until curl -s -f -o /dev/null "http://localhost:9000/"
 do
   echo "Tests are waiting for the rest bridge to start..."
   sleep 5
 done
 
-res=$(go test -json ./...)
+tmp=$(mktemp)
+go test -json ./tests/go-test/... | tee "$tmp"
+test_exit=${PIPESTATUS[0]}
 
-failedTestOutput=$(printf '%s\n' "$res" | jq -r 'select(.Action=="fail" and .Test) | .Test')
-okTestOutput=$(printf '%s\n' "$res" | jq -r 'select(.Action=="pass" and .Test) | .Test')
-numberOfFailedTests=$(echo "$failedTestOutput" | wc -l | awk '{print $1}')
+failedTestOutput=$(jq -r 'select(.Action=="fail" and .Test) | .Test' "$tmp")
+okTestOutput=$(jq -r 'select(.Action=="pass" and .Test) | .Test' "$tmp")
 
-# DEBUG output:
-echo "$res"
+rm -f "$tmp"
 
 echo "Pass:"
 echo "$okTestOutput"
@@ -22,7 +21,5 @@ if [[ $failedTestOutput ]]
 then
   echo "Fail:"
   echo "$failedTestOutput"
-else
-  numberOfFailedTests=""
 fi
-exit $(($numberOfFailedTests))
+exit "$test_exit"
