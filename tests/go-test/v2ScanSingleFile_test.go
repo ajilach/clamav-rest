@@ -43,7 +43,7 @@ func getResultFromFile(fName string, testName string, t *testing.T) int {
 	req.URL = reqURL
 	resp, err := c.Do(req)
 	if err != nil {
-		t.Errorf("%v failed when calling clamav-rest, %v", testName, err)
+		t.Fatalf("%v failed when calling clamav-rest, %v", testName, err)
 	}
 	return resp.StatusCode
 }

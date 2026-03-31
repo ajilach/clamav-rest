@@ -15,7 +15,7 @@ func TestScanV1_NonVirus(t *testing.T) {
 	}
 	resp, err := c.Do(req)
 	if err != nil {
-		t.Errorf("TestScanV1_NonVirus failed when calling clamav-rest, %v", err)
+		t.Fatalf("TestScanV1_NonVirus failed when calling clamav-rest, %v", err)
 	}
 	want := http.StatusOK
 	got := resp.StatusCode
@@ -33,7 +33,7 @@ func TestScanV1_WithVirus(t *testing.T) {
 	}
 	resp, err := c.Do(req)
 	if err != nil {
-		t.Errorf("TestScanV1_WithVirus failed when calling clamav-rest, %v", err)
+		t.Fatalf("TestScanV1_WithVirus failed when calling clamav-rest, %v", err)
 	}
 	want := http.StatusNotAcceptable
 	got := resp.StatusCode

@@ -97,7 +97,7 @@ func multiFileSend(t *testing.T, reqURL *url.URL, fileNames ...string) int {
 	req.URL = reqURL
 	resp, err := c.Do(req)
 	if err != nil {
-		t.Errorf("TestV2ScanMultiFile_NonVirus failed when calling clamav-rest, %v", err)
+		t.Fatalf("TestV2ScanMultiFile_NonVirus failed when calling clamav-rest, %v", err)
 	}
 	return resp.StatusCode
 }

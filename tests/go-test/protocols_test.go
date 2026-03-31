@@ -20,7 +20,7 @@ func TestHTTP1_1(t *testing.T) {
 
 	resp, err := performCall(ts, nil)
 	if err != nil {
-		t.Errorf("TestHTTP1_1 failed, %v", err)
+		t.Fatalf("TestHTTP1_1 failed, %v", err)
 	}
 	gotScheme := resp.Request.URL.Scheme
 	wantScheme := "http"
@@ -49,7 +49,7 @@ func TestH2C(t *testing.T) {
 	}
 	res, err := performCall(tsp, nil)
 	if err != nil {
-		t.Errorf("TestHTTP2 failed, %v", err)
+		t.Fatalf("TestHTTP2 failed, %v", err)
 	}
 
 	gotScheme := res.Request.URL.Scheme
@@ -72,13 +72,13 @@ func TestHTTP2_TLS(t *testing.T) {
 	}
 	url, err := getURL(nil, "v2", "scan")
 	if err != nil {
-		t.Errorf("TestHTTP2_TLS failed when creating url, %v", err)
+		t.Fatalf("TestHTTP2_TLS failed when creating url, %v", err)
 	}
 	url.Scheme = "https"
 	url.Host = net.JoinHostPort(url.Hostname(), "9443")
 	res, err := performCall(ts, url)
 	if err != nil {
-		t.Errorf("TestHTTP2_TLS failed, %v", err)
+		t.Fatalf("TestHTTP2_TLS failed, %v", err)
 	}
 
 	gotScheme := res.Request.URL.Scheme

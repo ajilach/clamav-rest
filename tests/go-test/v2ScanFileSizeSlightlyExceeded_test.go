@@ -31,7 +31,7 @@ func TestFileSizeSlightlyExceeded_RequestEntityTooLarge(t *testing.T) {
 	req.URL = reqURL
 	resp, err := c.Do(req)
 	if err != nil {
-		t.Errorf("TestFileSizeSlightlyExceeded_RequestEntityTooLarge failed when sending request to Clamav-rest, %v", err)
+		t.Fatalf("TestFileSizeSlightlyExceeded_RequestEntityTooLarge failed when sending request to Clamav-rest, %v", err)
 	}
 	want := http.StatusRequestEntityTooLarge
 	got := resp.StatusCode

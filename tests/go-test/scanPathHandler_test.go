@@ -37,7 +37,7 @@ func setupScanPathHandler(path string, t *testing.T, want int) *http.Response {
 	}
 	res, err := c.Get(url.String())
 	if err != nil {
-		t.Errorf("TestScanPathHandler_NonVirus failed, wanted %v, got err: %v", want, err)
+		t.Fatalf("TestScanPathHandler_NonVirus failed, wanted %v, got err: %v", want, err)
 	}
 	return res
 }

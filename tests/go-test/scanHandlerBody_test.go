@@ -54,7 +54,7 @@ func setupScanHandlerBody(fName string, t *testing.T, headers map[string]string,
 	}
 	resp, err := c.Do(req)
 	if err != nil {
-		t.Errorf("TestScanHandlerBody_nonVirus failed when sending request to clamav-rest, wanted %v, but got err %v", want, err)
+		t.Fatalf("TestScanHandlerBody_nonVirus failed when sending request to clamav-rest, wanted %v, but got err %v", want, err)
 	}
 	return resp
 }
