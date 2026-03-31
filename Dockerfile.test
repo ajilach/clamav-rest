@@ -1,41 +1,39 @@
 ARG GO_VERSION=1.26.0
 FROM golang:${GO_VERSION}-alpine AS build
 
-# Update libraries
-RUN apk update && apk upgrade
+RUN apk update && apk upgrade && apk add --no-cache git
 
-# Set workdir
-WORKDIR /go/src
+WORKDIR /src
 
-# Build go package
-ADD . /go/src/clamav-rest/
-RUN cd /go/src/clamav-rest && go mod tidy && go build -v
+COPY go.mod go.sum ./
+RUN go mod download
 
-FROM docker.io/python:3-alpine3.21
+COPY . .
+RUN go build -o /out/clamav-rest .
 
-# Copy compiled clamav-rest binary from build container to production container
-COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
+FROM golang:${GO_VERSION}-alpine AS test
 
-# Update & Install tzdata
-RUN apk update && apk upgrade && apk add --no-cache tzdata
-
-# Enable Bash & logrotate
-RUN apk add bash logrotate
+RUN apk update && apk upgrade && apk add --no-cache \
+    bash \
+    clamav \
+    clamav-libunrar \
+    curl \
+    jq \
+    logrotate \
+    openssl \
+    tzdata
 
 COPY clamavlogrotate /etc/logrotate.d/clamav
 
-# Set timezone to Europe/Zurich
 ENV TZ=Europe/Zurich
 
-# Create SSL directory for runtime-generated or mounted certificates
-RUN mkdir -p /etc/ssl/clamav-rest
-
-# Install ClamAV
-RUN apk --no-cache add clamav clamav-libunrar \
-    && mkdir /run/clamav \
-    && chown clamav:clamav /run/clamav
-# cURL and openssl added for tests
-RUN apk --no-cache add curl openssl
+RUN mkdir -p \
+    /etc/ssl/clamav-rest \
+    /clamav/etc \
+    /clamav/data \
+    /clamav/test \
+    /clamav/tmp \
+    /run/clamav
 
 # Configure clamAV to run in foreground with port 3310
 RUN sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/clamd.conf \
@@ -45,10 +43,7 @@ RUN sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/clamd.conf \
 RUN freshclam --quiet --no-dns
 
 COPY entrypoint.sh /usr/bin/
-
-RUN mkdir -p /clamav/etc \
-    && mkdir -p /clamav/data \
-    && mkdir -p /clamav/tmp 
+COPY --from=build /out/clamav-rest /usr/bin/clamav-rest
 
 RUN chown -R clamav:clamav /clamav \
     && chown -R clamav:clamav /var/log/clamav \
@@ -79,15 +74,19 @@ ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
 ENV SIGNATURE_CHECKS=2
 ENV ALLOW_ORIGINS=*
-
-USER clamav
-
-
-#FROM docker.io/python:3-alpine
+ENV GOCACHE=/clamav/test/.cache/go-build
+ENV GOMODCACHE=/clamav/test/.cache/go-mod
 
 WORKDIR /opt/clamav-rest
-COPY . .
-ADD --chmod=0755 ./run-tests .
 
+COPY go.mod go.sum ./
+COPY tests/go-test ./tests/go-test
+COPY entrypoint_tests.sh run-go-tests ./
+
+RUN chmod 0755 /opt/clamav-rest/entrypoint_tests.sh /opt/clamav-rest/run-go-tests \
+    && mkdir -p "$GOCACHE" "$GOMODCACHE" \
+    && chown -R clamav:clamav /clamav/test
+
+USER clamav
 ENTRYPOINT [ "/opt/clamav-rest/entrypoint_tests.sh" ]
 CMD [ "test" ]
