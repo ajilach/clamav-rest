@@ -57,6 +57,15 @@ spec:
             initialDelaySeconds: 45
             periodSeconds: 60
             failureThreshold: 2
+          readinessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 2
           # optional: mount TLS certs for HTTPS (port 9443)
           # volumeMounts:
           # - name: tls-certs
@@ -89,4 +98,3 @@ spec:
           operator: "Exists"
           effect: "NoExecute"
           tolerationSeconds: 30
-
