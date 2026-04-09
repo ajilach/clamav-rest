@@ -30,8 +30,6 @@ ClamAV virus/malware scanner with REST API. This is a two in one docker image wh
   - [Containerizing the application](#containerizing-the-application)
   - [Protocol Support](#protocol-support)
   - [Running Tests](#running-tests)
-    - [Running tests in a container](#running-tests-in-a-container)
-    - [Running tests with Python locally](#running-tests-with-python-locally)
   - [Release Notes](#release-notes)
 - [NixOS Support](#nixos-support)
 - [Deprecations](#deprecations)
@@ -366,11 +364,9 @@ date: Fri, 28 Feb 2025 21:49:33 GMT
 
 ### Running Tests
 
-We provide two ways for you to run the test suite: either through a Docker container or through Python. The Docker way does not have any requirements for your local system other than Docker or Podman while the Python way on the other hand makes it easier to debug and investigate the tests in your local environment.
+The test suite runs in a container using `Dockerfile.test`. The test cases are end-to-end tests that need the full realistic environment to run, with `clamav` and `clamav-rest` running. The only requirement for your local system is Docker or Podman.
 
-#### Running tests in a container
-
-This is the preferred way. Building with `Dockerfile.test` and running the container will start `clamav` and `clamav-rest`, then run the aforementioned python tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exitcode of zero is emitted.
+Building with `Dockerfile.test` and running the container will start `clamav` and `clamav-rest`, then run the Go end-to-end tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exit code of zero is emitted.
 
 Example on how to build and run the tests:
 
@@ -378,18 +374,6 @@ Example on how to build and run the tests:
 docker build -f Dockerfile.test -t clamav-rest-test .
 docker run clamav-rest-test
 ```
-
-#### Running tests with Python locally
-
-Some very quick notes about running the python tests:
-
-- Create a virtual environment (e.g. `python -m venv pyenv`)
-- Activate the environment (`source pyenv/bin/activate` for linux/macOS)
-- Install packages (`pip install -r tests/requirements.txt`)
-- Run clam-av locally (`docker compose -f 'docker-compose.test.yml' up -d --build`).
-- Run tests `behave tests/features`
-
-You can then deactivate the Python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
 
 ### Release Notes
 

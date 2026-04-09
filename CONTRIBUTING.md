@@ -113,7 +113,6 @@ Then create a Pull Request on GitHub targeting the `master` branch with a clear 
 The release process is fully automated:
 
 1. **Pull Request** - When you open a PR:
-
    - CI workflow runs automatically
    - Builds Docker images for all platforms
    - Runs tests
@@ -140,11 +139,8 @@ After release, images are available as:
 Before submitting your PR, please test your changes:
 
 ```bash
-# Run the test suite
-./run-tests
-
-# Build and test locally
-docker build . -f Dockerfile.test -t clamav-rest:test 
+# Build and run the test suite
+docker build . -f Dockerfile.test -t clamav-rest:test
 docker run --rm clamav-rest:test
 ```
 

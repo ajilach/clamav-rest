@@ -27,8 +27,9 @@ in
     };
 
     proxyVendor = true;
-    vendorHash = "sha256-wwPGs9/oI+8DopN+MIWVNwX05D4qQ2pMdWfewil4H8M=";
+    vendorHash = "sha256-Ek25Yopo3p662s88Ylqi/I5WyToc3m8t2axPieDs/cU=";
 
+    doCheck = false;
     meta = with lib; {
       description = "ClamAV virus/malware scanner with REST API. ";
       longDescription = ''
