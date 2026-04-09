@@ -73,6 +73,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 			log.Println(eErr)
 			return
 		}
+		w.WriteHeader(http.StatusServiceUnavailable)
 		fmt.Fprint(w, string(errJSON))
 		return
 	}

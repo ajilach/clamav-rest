@@ -235,7 +235,7 @@ When a custom `freshclam.conf` is detected, the entrypoint skips all freshclam-r
 
 Your custom `freshclam.conf` must include these directives for the container to function correctly:
 
-```
+```text
 Foreground yes
 DatabaseDirectory /clamav/data
 NotifyClamd /clamav/etc/clamd.conf
