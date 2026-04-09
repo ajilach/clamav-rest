@@ -20,6 +20,7 @@ ClamAV virus/malware scanner with REST API. This is a two in one docker image wh
   - [Environment Variables](#environment-variables)
   - [TLS Certificates](#tls-certificates)
   - [Custom freshclam.conf](#custom-freshclamconf)
+  - [Airgapped Environments](#airgapped-environments)
   - [Networking](#networking)
   - [Running on Kubernetes](#running-on-kubernetes)
 - [Maintenance / Monitoring](#maintenance--monitoring)
@@ -250,6 +251,44 @@ docker run -p 9000:9000 \
 **Kubernetes:**
 
 Add the configuration to a ConfigMap and mount it as a volume. See the commented-out examples in `kubernetes_example/configmap.yaml` and `kubernetes_example/deployment.yaml`.
+
+### Airgapped Environments
+
+This image can run in an airgapped environment, but there are a few important details to understand up front.
+
+By default, the virus database inside the image is only as new as the time when that image was built. During the Docker image build, `freshclam` is run once and the downloaded signature database is baked into the image. If you start that image later in a disconnected environment, the initial database age is therefore roughly:
+
+- `current time - image build time`
+
+For example, if the image was built 14 days ago and then transferred into an airgapped environment, the bundled signatures will also be about 14 days old before any further update process is possible.
+
+At runtime the entrypoint starts `freshclam` as a daemon. In a disconnected environment this will not be able to reach the public ClamAV mirrors, so you should expect update failures in the logs unless you provide an internal update source.
+
+Tips for running airgapped:
+
+- Preload the image before disconnecting from the internet, then start it with `docker compose up -d --pull never` so Docker does not try to fetch anything.
+- Keep `/clamav/data` on a persistent volume so imported database updates survive container recreation.
+- Verify the actual database version after startup with `curl http://localhost:9000/version` or `clamscan --database=/clamav/data --version` inside the container.
+- Test offline behavior on a connected machine by loading the image first, disconnecting the host, and then starting the stack locally.
+
+There are three practical ways to update signatures in an airgapped environment:
+
+1. Rebuild or replace the image outside the airgapped network and transfer it in again.
+   This refreshes the bundled database snapshot because `freshclam` runs during image build.
+
+2. Provide an internal mirror or other reachable update service inside the airgapped network.
+   In that setup, mount a custom `freshclam.conf` that points `freshclam` to your internal mirror instead of the public internet.
+
+3. Import database files manually into `/clamav/data`.
+   This is the most common option when there is no internal mirror. Transfer the relevant ClamAV database files into the mounted data directory, then restart the container or otherwise ensure `clamd` reloads the updated files.
+
+If you are distributing the image into multiple offline environments, the safest operational model is usually:
+
+- build or pull the image on a connected system
+- record the image build date and signature version
+- transfer the image with `docker save` / `docker load`
+- mount `/clamav/data` persistently
+- update either by importing newer database files or by publishing a newer image snapshot
 
 ### Networking
 
