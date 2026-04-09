@@ -30,8 +30,6 @@ ClamAV virus/malware scanner with REST API. This is a two in one docker image wh
   - [Containerizing the application](#containerizing-the-application)
   - [Protocol Support](#protocol-support)
   - [Running Tests](#running-tests)
-    - [Running tests in a container](#running-tests-in-a-container)
-    - [Running tests with Python locally](#running-tests-with-python-locally)
   - [Release Notes](#release-notes)
 - [NixOS Support](#nixos-support)
 - [Deprecations](#deprecations)
@@ -366,13 +364,9 @@ date: Fri, 28 Feb 2025 21:49:33 GMT
 
 ### Running Tests
 
-We attempt to provide only one way to run the test suite, running them in a container using `Dockerfile.test`. The test cases are end-to-end tests so they need the full realistic environment to run, with the `clamav` and `clamav-rest` running. The Docker way does not have any requirements for your local system other than Docker or Podman.
+The test suite runs in a container using `Dockerfile.test`. The test cases are end-to-end tests that need the full realistic environment to run, with `clamav` and `clamav-rest` running. The only requirement for your local system is Docker or Podman.
 
-There were originally Python/Gherkin tests but they have been rebuilt as end-to-end tests in go, to align the project to only use Go as the maintenance burden was too high maintaining both of these languages for no good reason. The Python tests are kept for now, for reference purposes only, and will be removed in the future.  
-
-#### Running tests in a container
-
-This is the preferred way. Building with `Dockerfile.test` and running the container will start `clamav` and `clamav-rest`, then run the aforementioned go tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exitcode of zero is emitted.
+Building with `Dockerfile.test` and running the container will start `clamav` and `clamav-rest`, then run the Go end-to-end tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exit code of zero is emitted.
 
 Example on how to build and run the tests:
 
@@ -380,18 +374,6 @@ Example on how to build and run the tests:
 docker build -f Dockerfile.test -t clamav-rest-test .
 docker run clamav-rest-test
 ```
-
-#### Running tests with Python locally, *DEPRECATED*
-
-Some very quick notes about running the python tests:
-
-- Create a virtual environment (e.g. `python -m venv pyenv`)
-- Activate the environment (`source pyenv/bin/activate` for linux/macOS)
-- Install packages (`pip install -r tests/requirements.txt`)
-- Run clam-av locally (`docker compose -f 'docker-compose.test.yml' up -d --build`).
-- Run tests `behave tests/features`
-
-You can then deactivate the Python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
 
 ### Release Notes
 
@@ -420,10 +402,6 @@ As of release [20250109](https://github.com/ajilach/clamav-rest/releases/tag/202
 #### Differences between `/scan` and `/v2/scan`
 
 Since the endpoint can receive one or several files, the response has been updated to always be returned as a json array and the filename is now included as a property in the response, to make it easy to find out what file(s) contains virus.
-
-### Python test suite
-
-The Python/Gherkin test suite was somewhat hard to maintain since the project maintainers doesn't have much experience with Python. A new Go-only end-to-end test suite has been built and dropped in as a replacement for the Python tests. It is run in the GitHub actions workflow.
 
 ### Centos Dockerfile
 

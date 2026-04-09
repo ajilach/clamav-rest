@@ -62,10 +62,8 @@ exitcode=0
     
    
     echo "Will run test and then exit"
-    # old python/Gherkin tests.
-    #/opt/clamav-rest/run-tests 
     /opt/clamav-rest/run-go-tests
-    # the exit code from `run-tests` is the numberOfFailedSteps
+    # the exit code from `run-go-tests` determines the container exit code
     res=$?
     # terminate the other processes of the container.
     terminate
