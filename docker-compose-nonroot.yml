@@ -13,7 +13,7 @@ services:
       - run-clamav:/run/clamav:rw
       - var-log-clamav:/var/log/clamav:rw
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9000/ || exit 1"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9000/"]
       interval: 60s
       timeout: 2s
       retries: 2
