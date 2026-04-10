@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +23,25 @@ import (
 
 var opts map[string]string
 
+const (
+	defaultFreshclamConfigPath = "/clamav/etc/freshclam.conf"
+	defaultClamAVDatabaseDir   = "/clamav/data"
+	defaultClamAVLogPath       = "/var/log/clamav/clamav.log"
+)
+
+var freshclamAttemptPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`^(.+?) -> ClamAV update process started(?: at .*)?$`),
+	regexp.MustCompile(`ClamAV update process started at (.+)$`),
+}
+
+var freshclamTimeLayouts = []string{
+	time.RFC3339,
+	"Mon Jan 2 15:04:05 2006",
+	"Mon Jan 02 15:04:05 2006",
+	"Mon Jan 2 15:04:05 2006 MST",
+	"Mon Jan 02 15:04:05 2006 MST",
+}
+
 var noOfFoundViruses = prometheus.NewCounter(prometheus.CounterOpts{
 	Name: "no_of_found_viruses",
 	Help: "The total number of found viruses",
@@ -32,6 +54,122 @@ var noOfHitsOnDeprecatedScanEndpoint = prometheus.NewCounter(prometheus.CounterO
 
 func init() {
 	log.SetOutput(io.Discard)
+}
+
+func getFreshclamConfigValue(configPath string, key string, fallback string) string {
+	config, err := os.Open(configPath)
+	if err != nil {
+		return fallback
+	}
+	defer config.Close()
+
+	scanner := bufio.NewScanner(config)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < 2 || fields[0] != key {
+			continue
+		}
+
+		return strings.Join(fields[1:], " ")
+	}
+
+	return fallback
+}
+
+func getLatestDatabaseUpdateTimestamp(databaseDir string) float64 {
+	entries, err := os.ReadDir(databaseDir)
+	if err != nil {
+		return 0
+	}
+
+	var latest time.Time
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		switch strings.ToLower(filepath.Ext(entry.Name())) {
+		case ".cld", ".cvd", ".cud":
+		default:
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+
+		if info.ModTime().After(latest) {
+			latest = info.ModTime()
+		}
+	}
+
+	if latest.IsZero() {
+		return 0
+	}
+
+	return float64(latest.Unix())
+}
+
+func parseFreshclamTimestamp(value string) (time.Time, bool) {
+	value = strings.TrimSpace(value)
+	for _, layout := range freshclamTimeLayouts {
+		timestamp, err := time.ParseInLocation(layout, value, time.Local)
+		if err == nil {
+			return timestamp, true
+		}
+	}
+
+	return time.Time{}, false
+}
+
+func parseFreshclamAttemptTimestamp(line string) (time.Time, bool) {
+	line = strings.TrimSpace(line)
+
+	for _, pattern := range freshclamAttemptPatterns {
+		matches := pattern.FindStringSubmatch(line)
+		if len(matches) != 2 {
+			continue
+		}
+
+		return parseFreshclamTimestamp(matches[1])
+	}
+
+	return time.Time{}, false
+}
+
+func getLatestFreshclamAttemptTimestamp(logPath string) float64 {
+	logFile, err := os.Open(logPath)
+	if err != nil {
+		return 0
+	}
+	defer logFile.Close()
+
+	scanner := bufio.NewScanner(logFile)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	var latest time.Time
+	for scanner.Scan() {
+		timestamp, ok := parseFreshclamAttemptTimestamp(scanner.Text())
+		if !ok {
+			continue
+		}
+
+		if timestamp.After(latest) {
+			latest = timestamp
+		}
+	}
+
+	if latest.IsZero() {
+		return 0
+	}
+
+	return float64(latest.Unix())
 }
 
 func clamversion(w http.ResponseWriter, r *http.Request) {
@@ -407,6 +545,20 @@ func main() {
 	))
 	reg.MustRegister(noOfFoundViruses)
 	reg.MustRegister(noOfHitsOnDeprecatedScanEndpoint)
+	reg.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "clamav_database_last_update_success_timestamp_seconds",
+		Help: "Unix timestamp of the most recently modified ClamAV signature database file.",
+	}, func() float64 {
+		databaseDir := getFreshclamConfigValue(defaultFreshclamConfigPath, "DatabaseDirectory", defaultClamAVDatabaseDir)
+		return getLatestDatabaseUpdateTimestamp(databaseDir)
+	}))
+	reg.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "clamav_database_last_update_attempt_timestamp_seconds",
+		Help: "Unix timestamp of the latest observed FreshClam database update attempt.",
+	}, func() float64 {
+		logPath := getFreshclamConfigValue(defaultFreshclamConfigPath, "UpdateLogFile", defaultClamAVLogPath)
+		return getLatestFreshclamAttemptTimestamp(logPath)
+	}))
 
 	for _, e := range os.Environ() {
 		pair := strings.Split(e, "=")

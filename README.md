@@ -333,6 +333,13 @@ clamscan --database=/clamav/data --version
 
 Description of the metrics is available at these endpoints as part of the metrics themselves.
 
+Custom metrics currently exposed by this project include:
+
+- `no_of_found_viruses`
+- `no_of_hits_on_deprecated_scan_endpoint`
+- `clamav_database_last_update_success_timestamp_seconds` - Unix timestamp of the most recently modified ClamAV signature database file.
+- `clamav_database_last_update_attempt_timestamp_seconds` - Unix timestamp of the latest observed FreshClam update attempt.
+
 ## Development
 
 Source code can be found here: <https://github.com/ajilach/clamav-rest>
