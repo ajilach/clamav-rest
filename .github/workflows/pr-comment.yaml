@@ -1,0 +1,50 @@
+name: PR Comment on CI success
+
+on:
+  workflow_run:
+    workflows:
+      - "CI - Pull Request Validation"
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  comment:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment PR(s) for successful workflow run
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const sha = context.payload.workflow_run.head_sha || context.payload.workflow_run.head_commit?.id;
+            if (!sha) {
+              console.log('No head SHA found for workflow_run; nothing to do.');
+              return;
+            }
+
+            const { data: associated } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: sha
+            });
+
+            if (!associated || associated.length === 0) {
+              console.log('No pull requests associated with commit ' + sha);
+              return;
+            }
+
+            const body = `✅ Docker images built successfully for all platforms!\n\nCI run: ${context.payload.workflow_run.html_url}`;
+
+            for (const pr of associated) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body
+              });
+              console.log(`Commented on PR #${pr.number}`);
+            }
