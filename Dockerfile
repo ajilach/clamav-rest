@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.26.0
+ARG GO_VERSION=1.26.1
 FROM golang:${GO_VERSION}-alpine AS build
 
 # Update libraries
@@ -20,7 +20,7 @@ COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
 RUN apk update && apk upgrade && apk add --no-cache tzdata
 
 # Enable Bash & logrotate
-RUN apk add bash logrotate
+RUN apk add bash logrotate su-exec ca-certificates
 
 # Update lobcrypto3
 RUN apk upgrade libssl3 libcrypto3
@@ -75,7 +75,5 @@ ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
 ENV SIGNATURE_CHECKS=2
 ENV ALLOW_ORIGINS=*
-
-USER clamav
 
 ENTRYPOINT [ "entrypoint.sh" ]
