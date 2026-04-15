@@ -1,0 +1,25 @@
+#!/bin/bash
+
+until curl -s -f -o /dev/null "http://localhost:9000/"
+do
+  echo "Tests are waiting for the rest bridge to start..."
+  sleep 5
+done
+
+tmp=$(mktemp)
+go test -json ./tests/go-test/... | tee "$tmp"
+test_exit=${PIPESTATUS[0]}
+
+failedTestOutput=$(jq -r 'select(.Action=="fail" and .Test) | .Test' "$tmp")
+okTestOutput=$(jq -r 'select(.Action=="pass" and .Test) | .Test' "$tmp")
+
+rm -f "$tmp"
+
+echo "Pass:"
+echo "$okTestOutput"
+if [[ $failedTestOutput ]]
+then
+  echo "Fail:"
+  echo "$failedTestOutput"
+fi
+exit "$test_exit"

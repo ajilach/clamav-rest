@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# Generate self-signed TLS certificate for tests if not already present
+if [ ! -f /etc/ssl/clamav-rest/server.key ] || [ ! -f /etc/ssl/clamav-rest/server.crt ]; then
+    echo "Generating self-signed TLS certificate for tests..."
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 \
+        -keyout /etc/ssl/clamav-rest/server.key \
+        -out /etc/ssl/clamav-rest/server.crt \
+        -days 1 -nodes -subj "/CN=localhost" 2>/dev/null
+fi
+
+cp /etc/clamav/* /clamav/etc/
+
+# Replace values in freshclam.conf
+sed -i 's/^#\?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' /clamav/etc/freshclam.conf
+sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/freshclam.conf
+sed -i 's/^#\?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' /clamav/etc/freshclam.conf
+sed -i 's/^#TemporaryDirectory .*$/TemporaryDirectory \/clamav\/tmp/g' /clamav/etc/clamd.conf
+sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/clamd.conf
+
+# Replace values with environment variables in freshclam.conf
+sed -i 's/^#\?Checks .*$/Checks '"$SIGNATURE_CHECKS"'/g' /clamav/etc/freshclam.conf
+
+# Replace values with environment variables in clamd.conf
+sed -i 's/^#MaxScanSize .*$/MaxScanSize '"$MAX_SCAN_SIZE"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#StreamMaxLength .*$/StreamMaxLength 10M/g' /clamav/etc/clamd.conf #'"$MAX_FILE_SIZE"'
+sed -i 's/^#MaxFileSize .*$/MaxFileSize 10M/g' /clamav/etc/clamd.conf #$MAX_FILE_SIZE - test case to make sure 413 on filesize exceeded works.
+sed -i 's/^#MaxRecursion .*$/MaxRecursion '"$MAX_RECURSION"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#MaxFiles .*$/MaxFiles '"$MAX_FILES"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#MaxEmbeddedPE .*$/MaxEmbeddedPE '"$MAX_EMBEDDEDPE"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#MaxHTMLNormalize .*$/MaxHTMLNormalize '"$MAX_HTMLNORMALIZE"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#MaxHTMLNoTags.*$/MaxHTMLNoTags '"$MAX_HTMLNOTAGS"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#MaxScriptNormalize .*$/MaxScriptNormalize '"$MAX_SCRIPTNORMALIZE"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#MaxZipTypeRcg .*$/MaxZipTypeRcg '"$MAX_ZIPTYPERCG"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#MaxPartitions .*$/MaxPartitions '"$MAX_PARTITIONS"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#MaxIconsPE .*$/MaxIconsPE '"$MAX_ICONSPE"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#PCREMatchLimit.*$/PCREMatchLimit '"$PCRE_MATCHLIMIT"'/g' /clamav/etc/clamd.conf
+sed -i 's/^#PCRERecMatchLimit .*$/PCRERecMatchLimit '"$PCRE_RECMATCHLIMIT"'/g' /clamav/etc/clamd.conf
+
+# Define function to terminate the container
+terminate () {
+    pids=`jobs -p`
+    for pid in $pids; do
+        if [ "$$" != "$pid" ]; then
+            if ! kill -0 $pid 2>/dev/null; then
+                wait -n $pid
+                exitcode=$?
+            fi
+        fi
+    done
+    kill $pids 2>/dev/null
+}
+
+if [ -z "$(ls -A /clamav/data)" ]; then
+  cp /var/lib/clamav/* /clamav/data/
+fi
+exitcode=0
+(
+    freshclam --config-file=/clamav/etc/freshclam.conf --daemon &
+    clamd --config-file=/clamav/etc/clamd.conf &
+    /usr/bin/clamav-rest &
+    
+   
+    echo "Will run test and then exit"
+    /opt/clamav-rest/run-go-tests
+    # the exit code from `run-go-tests` determines the container exit code
+    res=$?
+    # terminate the other processes of the container.
+    terminate
+    # the value of $exitcode set in the terminate function is not used because we want 
+    # the result of the tests to determine the exit of the container when running tests.
+    # If no tests have failed, the exit code should be 0
+    exitcode=$res
+    echo "number of failed tests and exit code: $exitcode"
+    exit $exitcode
+)
+# Capture exit code from the sub shell to use it when exiting the container.    
+exitcode=$? 
+
+
+exit $exitcode

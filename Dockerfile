@@ -1,4 +1,5 @@
-FROM golang:alpine3.21 AS build
+ARG GO_VERSION=1.26.0
+FROM golang:${GO_VERSION}-alpine AS build
 
 # Update libraries
 RUN apk update && apk upgrade
@@ -10,7 +11,7 @@ WORKDIR /go/src
 ADD . /go/src/clamav-rest/
 RUN cd /go/src/clamav-rest && go mod tidy && go build -v
 
-FROM alpine:3.21
+FROM alpine:3.23
 
 # Copy compiled clamav-rest binary from build container to production container
 COPY --from=build /go/src/clamav-rest/clamav-rest /usr/bin/
@@ -29,7 +30,8 @@ COPY clamavlogrotate /etc/logrotate.d/clamav
 # Set timezone to Europe/Zurich
 ENV TZ=Europe/Zurich
 
-ADD ./server.* /etc/ssl/clamav-rest/
+# Create SSL directory for runtime-mounted certificates
+RUN mkdir -p /etc/ssl/clamav-rest
 
 # Install ClamAV
 RUN apk --no-cache add clamav clamav-libunrar \
@@ -68,9 +70,11 @@ ENV MAX_SCRIPTNORMALIZE=5M
 ENV MAX_ZIPTYPERCG=1M
 ENV MAX_PARTITIONS=50
 ENV MAX_ICONSPE=100
+ENV MAX_RECONNECT_TIME=30
 ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
 ENV SIGNATURE_CHECKS=2
+ENV ALLOW_ORIGINS=*
 
 USER clamav
 

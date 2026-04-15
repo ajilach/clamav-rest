@@ -2,57 +2,56 @@
 [![Latest Release](https://img.shields.io/github/v/release/ajilach/clamav-rest)](https://github.com/ajilach/clamav-rest/releases)
 [![License: MIT](https://img.shields.io/github/license/ajilach/clamav-rest)](https://opensource.org/licenses/MIT)
 
-# Table of Contents
+# clamav-rest
+
+ClamAV virus/malware scanner with REST API. This is a two in one docker image which runs the open source virus scanner [ClamAV](https://www.clamav.net/), performs automatic virus definition updates as a background process and provides a REST API interface to interact with the ClamAV process.
+
+## Table of Contents
 
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
   - [Status Codes](#status-codes)
+  - [Security considerations](#security-considerations)
 - [Endpoints](#endpoints)
   - [Utility endpoints](#utility-endpoints)
   - [Scanning endpoints](#scanning-endpoints)
 - [Configuration](#configuration)
   - [Environment Variables](#environment-variables)
+  - [TLS Certificates](#tls-certificates)
+  - [Custom freshclam.conf](#custom-freshclamconf)
+  - [Airgapped Environments](#airgapped-environments)
   - [Networking](#networking)
+  - [Running on Kubernetes](#running-on-kubernetes)
 - [Maintenance / Monitoring](#maintenance--monitoring)
   - [Shell Access](#shell-access)
   - [Prometheus](#prometheus)
 - [Development](#development)
-  - [Updates](#updates)
+  - [Building the golang binary locally](#building-the-golang-binary-locally)
+  - [Containerizing the application](#containerizing-the-application)
+  - [Protocol Support](#protocol-support)
+  - [Running Tests](#running-tests)
+  - [Release Notes](#release-notes)
+- [NixOS Support](#nixos-support)
 - [Deprecations](#deprecations)
-  - [`/scan` Endpoint](#scan-endpoint)
+  - [`/scan` endpoint](#scan-endpoint)
     - [Differences between `/scan` and `/v2/scan`](#differences-between-scan-and-v2scan)
-  - [centos.Dockerfile](#centosdockerfile)
+  - [Centos Dockerfile](#centos-dockerfile)
 - [Contributing](#contributing)
 - [History](#history)
 - [References](#references)
 - [License](#license)
 
-# Introduction
+## Introduction
 
-This is a two in one docker image which runs the open source virus scanner ClamAV (https://www.clamav.net/), performs automatic virus definition updates as a background process and provides a REST API interface to interact with the ClamAV process.
+This is a two in one docker image which runs the open source virus scanner ClamAV (<https://www.clamav.net/>), performs automatic virus definition updates as a background process and provides a REST API interface to interact with the ClamAV process.
 
-# FAC Updates
+## FAC Updates
 An issue was found using `echo "RELOAD" | nc 127.0.0.1 3310` behind a proxy to force reload the sig database. Due to this, and with us rebuilding the image weekly to get a new sha256, on top of our terraform redeploying clamav during the week with new sha256's, force reloading the database like this makes it impossible to use the scanner, as `3310` gets soft locked on the database update, and causes any subsequent scans to fail.
 
-# Updates
+> **📢 New in December 2025:** We've migrated to semantic versioning! Docker images are now tagged with version numbers like `v1.2.3` instead of dates. Releases are automatically created when pull requests are merged, with versions determined by [conventional commit messages](CONTRIBUTING.md). Check our [Releases page](https://github.com/ajilach/clamav-rest/releases) for detailed changelogs.
 
-As of October 21 2024, freshclam notifies the correct `.clamd.conf` so that `clamd` is notified about updates and the correct version is returned now.
-This is an additional fix to the latest fix from October 15 2024 which was not working. Thanks to [christianbumann](https://github.com/christianbumann) and [arizon-dread](https://github.com/arizon-dread).
-
-As of October 15 2024, ClamAV was thought to handle database updates correctly thanks to [christianbumann](https://github.com/christianbumann). It turned out that this was not the case.
-
-As of May 2024, the releases are built for multiple architectures thanks to efforts from [kcirtapfromspace](https://github.com/kcirtapfromspace) and support non-root read-only deployments thanks to [robaca](https://github.com/robaca).
-
-The additional endpoint `/version` is now available to check the `clamd` version and signature date. Thanks [pastral](https://github.com/pastral).
-
-Closed a security hole by upgrading our `Dockerfile` to the alpine base image version `3.19` thanks to [Marsup](https://github.com/Marsup).
-
-# Prerequisites
-
-This container doesn't do much on it's own unless you use an additional service or communicator to talk to it!
-
-# Installation
+## Installation
 
 Automated builds of the image are available on [Docker Hub](https://hub.docker.com/r/ajilaag/clamav-rest) and are the recommended method of installation. Grab the lastest release:
 
@@ -62,11 +61,13 @@ docker pull ajilaag/clamav-rest
 
 The following image tags are available:
 
-- `latest` - Most recent release of ClamAV with REST API
-- `YYYYMMDD` - The day of the release
-- `sha-...` - The git commit sha. This version ensures that the exact image is used and will be unique for each build
+- `latest` - Most recent stable release
+- `v1.2.3` - Specific semantic version (recommended for production)
+- `v1.2` - Latest patch version of a minor release
+- `v1` - Latest minor version of a major release
+- `sha-...` - Specific git commit (for testing/debugging)
 
-# Quick Start
+## Quick Start
 
 > See [this docker-compose file](docker-compose-nonroot.yml) for non-root read-only usage.
 
@@ -142,19 +143,23 @@ Content-Length: 33
 [{ "Status": "OK", "Description": "","FileName":"clamrest.go"}]
 ```
 
-## Status Codes
+### Status Codes
 
 - 200 - OK: clean file = no KNOWN infections
 - 400 - ClamAV returned general error for file
 - 406 - Not Acceptable: payload is infected
-- 412 - Unable to parse the file provided
+- 412 - Unable to parse the file provided. This also happens when you call `scanFile` and the uri parameter path doesn't point to a file on disk.
 - 413 - Request entity too large: the file exceeds the scannable limit. Set MAX_FILE_SIZE to scan larger files
 - 422 - Filename is missing in MimePart
 - 501 - Unknown request
 
-# Endpoints
+### Security considerations
 
-## Utility endpoints
+In order to remain backward compatible, we allow all CORS related origins by setting `ALLOW_ORIGINS` to `*`. Please change is to a list of allowed origins or to blank for only allowing same origin requests for increased security. See the [Configuration Section](#configuration) below for more details on `ALLOW_ORIGINS`.
+
+## Endpoints
+
+### Utility endpoints
 
 | Endpoint   | Description                                                                                                                 |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -162,18 +167,19 @@ Content-Length: 33
 | `/version` | Returns the clamav binary version and also the version of the virus signature databases and the signature last update date. |
 | `/metrics` | Prometheus endpoint for scraping metrics.                                                                                   |
 
-## Scanning endpoints
+### Scanning endpoints
 
-| Endpoint                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/v2/scan`               | Scanning endpoint, accepts a multipart/form-data request with one or more files and returns a json array with status, description and filename, along with the most severe http status code that was possible to determine. <br/><br/>**example response:** <br/> `[{"Status":"OK","Description":"","FileName":"checksums.txt"}]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `/scanPath?path=/folder` | A scanning endpoint that will scan a folder. A practical example would be to mount a share into the container where you dump files into a folder, call `/scanPath` and let it scan the whole directory content, then continue processing them.<br/><br/>**example response:**<br/> `[{"Raw":"/folder: OK","Description":"","Path":"/folder","Hash":"","Size":0,"Status":"OK"}]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `/scanHandlerBody`       | This endpoint scans the content in the HTTP POST request body.<br/><br/> **example response:**<br/> `{OK   200}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `/scan`                  | [DEPRECATED] This endpoint scans in a similar manner to `/v2/scan` but does return one or more json objects without a valid json structure in between (no json array). It also does not include the filename as a json property. This endpoint is still present in the api for backwards compatibility for those who still use it, but it will also return headers indicating deprecation and pointing out the new, updated endpoint, `/v2/scan`. This endpoint does accept a multipart/form-data endpoint that by http standards can accept multiple files, and does scan them all, but the implementation of the endpoint indicates that it was originally (probably) meant to only scan one file at a time. Please don't rely on this endpoint to exist in the future. This project has the intention to sunset it to keep the project focus on a well maintainted set of features.<br/><br/>**example response:** <br/>`{"Status":"OK","Description":""}` |
+| Endpoint                          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/v2/scan`                        | Scanning endpoint, accepts a multipart/form-data request with one or more files and returns a json array with status, description and filename, along with the most severe http status code that was possible to determine. **example response:** `[{"Status":"OK","Description":"","FileName":"checksums.txt"}]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `/scanFile?path=/folder/file.txt` | A scanning endpoint that will scan a file using SCAN. A practical example would be to mount a share into the container where you put a file into a folder, call `/scanFile` and let it scan the content.**example response:** `{"Status":"FOUND","Description":"Win.Test.EICAR_HDB-1","FileName":"/clamav/tmp/eicar.test"}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/scanPath?path=/folder`          | A scanning endpoint that will scan a folder using ALLMATCHSCAN. A practical example would be to mount a share into the container where you dump files into a folder, call `/scanPath` and let it scan the whole directory content, then continue processing them.**example response:** `[{"Raw":"/folder: OK","Description":"","Path":"/folder","Hash":"","Size":0,"Status":"OK"}]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `/scanHandlerBody`                | This endpoint scans the content in the HTTP POST request body. **example response:** `{OK   200}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `/scan`                           | [DEPRECATED] This endpoint scans in a similar manner to `/v2/scan` but does return one or more json objects without a valid json structure in between (no json array). It also does not include the filename as a json property. This endpoint is still present in the api for backwards compatibility for those who still use it, but it will also return headers indicating deprecation and pointing out the new, updated endpoint, `/v2/scan`. This endpoint does accept a multipart/form-data endpoint that by http standards can accept multiple files, and does scan them all, but the implementation of the endpoint indicates that it was originally (probably) meant to only scan one file at a time. Please don't rely on this endpoint to exist in the future. This project has the intention to sunset it to keep the project focus on a well maintainted set of features.**example response:** `{"Status":"OK","Description":""}` |
 
-# Configuration
+## Configuration
 
-## Environment Variables
+### Environment Variables
 
 Below is the complete list of available options that can be used to customize your installation.
 
@@ -190,33 +196,104 @@ Below is the complete list of available options that can be used to customize yo
 | `MAX_ZIPTYPERCG`      | Maximum size of ZIP to reanalyze type recognition. Defaults to `1M`                                     |
 | `MAX_PARTITIONS`      | How many partitions per raw disk to scan. Defaults to `50`                                              |
 | `MAX_ICONSPE`         | How many icons in PE to scan. Defaults to `100`                                                         |
+| `MAX_RECONNECT_TIME`  | Maximum timeout while waiting for ClamAV to start. Defaults to `30`                                     |
 | `PCRE_MATCHLIMIT`     | Maximum PCRE match calls. Defaults to `100000`                                                          |
 | `PCRE_RECMATCHLIMIT`  | Maximum recursive match calls to PCRE. Defaults to `2000`                                               |
 | `SIGNATURE_CHECKS`    | How many times per day to check for a new database signature. Must be between 1 and 50. Defaults to `2` |
-| Parameter | Description |
-|-----------|-------------|
-| `MAX_SCAN_SIZE` | Amount of data scanned for each file - Default `100M` |
-| `MAX_FILE_SIZE` | Don't scan files larger than this size - Default `25M` |
-| `MAX_RECURSION` | How many nested archives to scan - Default `16` |
-| `MAX_FILES` | Number of files to scan withn archive - Default `10000` |
-| `MAX_EMBEDDEDPE` | Maximum file size for embedded PE - Default `10M` |
-| `MAX_HTMLNORMALIZE` | Maximum size of HTML to normalize - Default `10M` |
-| `MAX_HTMLNOTAGS` | Maximum size of Normlized HTML File to scan- Default `2M` |
-| `MAX_SCRIPTNORMALIZE` | Maximum size of a Script to normalize - Default `5M` |
-| `MAX_ZIPTYPERCG` | Maximum size of ZIP to reanalyze type recognition - Default `1M` |
-| `MAX_PARTITIONS` | How many partitions per Raw disk to scan - Default `50` |
-| `MAX_ICONSPE` | How many Icons in PE to scan - Default `100` |
-| `PCRE_MATCHLIMIT` | Maximum PCRE Match Calls - Default `100000` |
-| `PCRE_RECMATCHLIMIT` | Maximum Recursive Match Calls to PCRE - Default `2000` |
-| `SIGNATURE_CHECKS` | Check times per day for a new database signature. Must be between 1 and 50. - Default `2` |
-| `PROXY_SERVER` | Specify a proxy for freshclam to utilize, if applicable, set in environment variables - Optional |
-| `PROXY_PORT` | The port for the proxy server, if applicable, set in environment variables - Optional |
-| `PROXY_USERNAME` | The username for the proxy server, if applicable, set in environment variables - Optional |
-| `PROXY_PASSWORD` | The password for the proxy server, if applicable, set in environment variables - Optional |
+| `PROXY_SERVER`        | Specify a proxy for freshclam to utilize. Default disabled (optional)                                   |
+| `PROXY_PORT`          | The port for the proxy server. Default disabled (optional)                                              |
+| `PROXY_USERNAME`      | The username for the proxy server. Default disabled (optional)                                          |
+| `PROXY_PASSWORD`      | The password for the proxy server. Default disabled (optional)                                          |
 
-## Networking
+### TLS Certificates
 
-[TODO: is the description for port 3310 correct?]
+TLS certificates are **not** embedded in the Docker image. To enable HTTPS on port 9443, mount your own certificate and key at runtime. If no certificates are provided, the HTTPS server is gracefully skipped and only HTTP (port 9000) is available.
+
+**Docker:**
+
+```bash
+docker run -p 9000:9000 -p 9443:9443 \
+  -v /path/to/server.crt:/etc/ssl/clamav-rest/server.crt:ro \
+  -v /path/to/server.key:/etc/ssl/clamav-rest/server.key:ro \
+  -itd --name clamav-rest ajilaag/clamav-rest
+```
+
+**Kubernetes:**
+
+Create a TLS secret and mount it as a volume. See the commented-out examples in `kubernetes_example/deployment.yaml`:
+
+```bash
+kubectl create secret tls clamav-rest-tls \
+  --cert=server.crt --key=server.key -n clamav-rest
+```
+
+You can also override the certificate paths using the `SSL_CERT` and `SSL_KEY` environment variables.
+
+### Custom freshclam.conf
+
+For advanced freshclam configuration (e.g., custom database mirrors, private mirrors, or settings not exposed via environment variables), you can provide your own `freshclam.conf` file.
+
+When a custom `freshclam.conf` is detected, the entrypoint skips all freshclam-related configuration. This means the following environment variables are **ignored** when a custom config is provided: `SIGNATURE_CHECKS`, `PROXY_SERVER`, `PROXY_PORT`, `PROXY_USERNAME`, `PROXY_PASSWORD`.
+
+Your custom `freshclam.conf` must include these directives for the container to function correctly:
+
+```text
+Foreground yes
+DatabaseDirectory /clamav/data
+NotifyClamd /clamav/etc/clamd.conf
+```
+
+**Docker:**
+
+```bash
+docker run -p 9000:9000 \
+  -v /path/to/freshclam.conf:/clamav/etc/freshclam.conf:ro \
+  -itd --name clamav-rest ajilaag/clamav-rest
+```
+
+**Kubernetes:**
+
+Add the configuration to a ConfigMap and mount it as a volume. See the commented-out examples in `kubernetes_example/configmap.yaml` and `kubernetes_example/deployment.yaml`.
+
+### Airgapped Environments
+
+This image can run in an airgapped environment, but there are a few important details to understand up front.
+
+By default, the virus database inside the image is only as new as the time when that image was built. During the Docker image build, `freshclam` is run once and the downloaded signature database is baked into the image. If you start that image later in a disconnected environment, the initial database age is therefore roughly:
+
+- `current time - image build time`
+
+For example, if the image was built 14 days ago and then transferred into an airgapped environment, the bundled signatures will also be about 14 days old before any further update process is possible.
+
+At runtime the entrypoint starts `freshclam` as a daemon. In a disconnected environment this will not be able to reach the public ClamAV mirrors, so you should expect update failures in the logs unless you provide an internal update source.
+
+Tips for running airgapped:
+
+- Preload the image before disconnecting from the internet, then start it with `docker compose up -d --pull never` so Docker does not try to fetch anything.
+- Keep `/clamav/data` on a persistent volume so imported database updates survive container recreation.
+- Verify the actual database version after startup with `curl http://localhost:9000/version` or `clamscan --database=/clamav/data --version` inside the container.
+- Test offline behavior on a connected machine by loading the image first, disconnecting the host, and then starting the stack locally.
+
+There are three practical ways to update signatures in an airgapped environment:
+
+1. Rebuild or replace the image outside the airgapped network and transfer it in again.
+   This refreshes the bundled database snapshot because `freshclam` runs during image build.
+
+2. Provide an internal mirror or other reachable update service inside the airgapped network.
+   In that setup, mount a custom `freshclam.conf` that points `freshclam` to your internal mirror instead of the public internet.
+
+3. Import database files manually into `/clamav/data`.
+   This is the most common option when there is no internal mirror. Transfer the relevant ClamAV database files into the mounted data directory, then restart the container or otherwise ensure `clamd` reloads the updated files.
+
+If you are distributing the image into multiple offline environments, the safest operational model is usually:
+
+- build or pull the image on a connected system
+- record the image build date and signature version
+- transfer the image with `docker save` / `docker load`
+- mount `/clamav/data` persistently
+- update either by importing newer database files or by publishing a newer image snapshot
+
+### Networking
 
 | Port   | Description                              |
 | ------ | ---------------------------------------- |
@@ -224,9 +301,14 @@ Below is the complete list of available options that can be used to customize yo
 | `9000` | HTTP REST listening port                 |
 | `9443` | HTTPS REST listening port                |
 
-# Maintenance / Monitoring
+### Running on Kubernetes
 
-## Shell Access
+Please refer to the `kubernetes_example/` folder on how to configure the service.  
+A way to mount a data directory from a pvc has been added to the manifest. Uncomment it to use it.
+
+## Maintenance / Monitoring
+
+### Shell Access
 
 For debugging and maintenance purposes you may want access the container's shell:
 
@@ -242,7 +324,7 @@ was started with this `/clamav/etc/clamd.conf` referenced in `entrypoint.sh`.
 clamscan --database=/clamav/data --version
 ```
 
-## Prometheus
+### Prometheus
 
 [Prometheus metrics](https://prometheus.io/docs/guides/go-application/) were implemented, which can be retrieved from the `/metrics` endpoint:
 
@@ -254,13 +336,13 @@ clamscan --database=/clamav/data --version
 
 Description of the metrics is available at these endpoints as part of the metrics themselves.
 
-# Development
+## Development
 
-Source code can be found here: https://github.com/ajilach/clamav-rest
+Source code can be found here: <https://github.com/ajilach/clamav-rest>
 
-## Building the golang binary locally:
+### Building the golang binary locally
 
-```sh
+```bash
 # For linux on amd64
 GOOS=linux GOARCH=amd64 go build
 
@@ -274,7 +356,7 @@ GOOS=darwin GOARCH=amd64 go build
 GOOS=windows GOARCH=amd64 go build
 ```
 
-## Containerizing the application:
+### Containerizing the application
 
 ```bash
 docker build . -t clamav-rest
@@ -283,7 +365,7 @@ docker run -p 9000:9000 -p 9443:9443 -itd --name clamav-rest clamav-rest
 
 Note that the `docker build` command also takes care of compiling the source. Therefore you do not need to perform the manual build steps from above nor do you need a local go development environment.
 
-## Protocol Support
+### Protocol Support
 
 Go 1.24 added unencrypted "HTTP/2 with Prior Knowledge" support into the `net/http` standard library, which is useful for microservices behind firewalls and load balancers.
 
@@ -303,7 +385,7 @@ Content-Length: 59
 ```bash
 $ curl -i -k --http2-prior-knowledge -F "file=@clamrest.go" http://localhost:9000/v2/scan
 
-HTTP/2 200 
+HTTP/2 200
 content-type: application/json; charset=utf-8
 content-length: 59
 date: Fri, 28 Feb 2025 21:49:17 GMT
@@ -314,7 +396,7 @@ date: Fri, 28 Feb 2025 21:49:17 GMT
 ```bash
 $ curl -i -k --http2 -F "file=@clamrest.go" https://localhost:9443/v2/scan
 
-HTTP/2 200 
+HTTP/2 200
 content-type: application/json; charset=utf-8
 content-length: 59
 date: Fri, 28 Feb 2025 21:49:33 GMT
@@ -322,71 +404,73 @@ date: Fri, 28 Feb 2025 21:49:33 GMT
 [{"Status":"OK","Description":"","FileName":"clamrest.go"}]
 ```
 
-## Python Tests
+### Running Tests
 
-Some very quick notes about running the python tests:
+The test suite runs in a container using `Dockerfile.test`. The test cases are end-to-end tests that need the full realistic environment to run, with `clamav` and `clamav-rest` running. The only requirement for your local system is Docker or Podman.
 
-- Create a virtual environment (e.g. `python -m venv pyenv`)
-- Activate the environment (`source pyenv/bin/activate` for linux/macOS)
-- Install packages (`pip install -r tests/requirements.txt`)
-- Run clam-av locally (`docker compose -f 'docker-compose.test.yml' up -d --build`).
-- Run tests `behave tests/features`
+Building with `Dockerfile.test` and running the container will start `clamav` and `clamav-rest`, then run the Go end-to-end tests within the container and then exit. The exit code of the container matches how many failed tests there are, with no failed tests, a successful exit code of zero is emitted.
 
-You can then deactivate the python environment with `deactivate`, and shutdown the container with `docker compose -f 'docker-compose.test.yml' down`.
+Example on how to build and run the tests:
 
-## Updates
+```sh
+docker build -f Dockerfile.test -t clamav-rest-test .
+docker run clamav-rest-test
+```
 
-2025-02-07: Improved documentation.
+### Release Notes
 
-2025-01-08: [PR 50](https://github.com/ajilach/clamav-rest/pull/50) integrated which now provides a new `/v2` endpoint returning more scan result information: status, description, http status and a list of scanned files. See the PR for more details. The old `/scan` endpoint is now considered deprecated. Also, a file size scan limit has been added which can be configured through the `MAX_FILE_SIZE` environment variable. This update also fixes a bug that would falsely return `200 OK` if the first file in a multi file scan was clean, regardless if any of the following files contained viruses. All endpoints now increment the Prometheus virus metric counter when a virus is discovered during a scan.
+For detailed release notes, changelogs, and version history, please see our [Releases page](https://github.com/ajilach/clamav-rest/releases).
 
-2024-10-21: freshclam notifies the correct `.clamd.conf` so that `clamd` is notified about updates and the correct version is returned now.
-This is an additional fix to the latest fix from October 15 2024 which was not working. Thanks to [christianbumann](https://github.com/christianbumann) and [arizon-dread](https://github.com/arizon-dread).
+We follow [Semantic Versioning](https://semver.org/) and use [Conventional Commits](https://www.conventionalcommits.org/) to automatically generate changelogs.
 
-2024-10-15: ClamAV was thought to handle database updates correctly thanks to [christianbumann](https://github.com/christianbumann). It turned out that this was not the case.
+## NixOS Support
 
-As of May 2024, the releases are built for multiple architectures thanks to efforts from [kcirtapfromspace](https://github.com/kcirtapfromspace) and support non-root read-only deployments thanks to [robaca](https://github.com/robaca).
+This project provides a `default.nix` derivation that allows you to build the clamav-rest binary using Nix:
 
-The additional endpoint `/version` is now available to check the `clamd` version and signature date. Thanks [pastral](https://github.com/pastral).
+```bash
+nix-build
+```
 
-Closed a security hole by upgrading our `Dockerfile` to the alpine base image version `3.19` thanks to [Marsup](https://github.com/Marsup).
+The resulting binary will be available in the `./result/bin/` directory.
 
-# Deprecations
+**Note:** NixOS support is provided on a **best effort** basis. The derivation is maintained as a convenience for the Nix community, but may be dropped in future releases if it requires excessive maintenance or becomes incompatible with the project's development workflow.
 
-## `/scan` endpoint
+## Deprecations
+
+### `/scan` endpoint
 
 As of release [20250109](https://github.com/ajilach/clamav-rest/releases/tag/20250109) the `/scan` endpoint is deprecated and `/v2/scan` is now the preferred endpoint to use.
 
-### Differences between `/scan` and `/v2/scan`
+#### Differences between `/scan` and `/v2/scan`
 
 Since the endpoint can receive one or several files, the response has been updated to always be returned as a json array and the filename is now included as a property in the response, to make it easy to find out what file(s) contains virus.
 
-## Centos Dockerfile
+### Centos Dockerfile
 
 The [centos.Dockerfile](./centos.Dockerfile) has been last updated in the release [20250109](https://github.com/ajilach/clamav-rest/releases/tag/20250109) but will not be maintained anymore going forward. If there are community members using it, please consider contributing.
 
-# Contributing
+## Contributing
 
-We welcome and appreciate contributions from the community. To keep our project maintainable and high quality, please follow these best practices:
+We welcome and appreciate contributions from the community! 🎉
 
-- **Fork and Branch:** Fork the repository and work on a feature branch. Make sure your branch is up-to-date with the latest changes.
-- **Coding Standards:** Adhere to standard Go conventions and ensure your code is clean, well-documented, and tested.
-- **Commit Messages:** Write clear and concise commit messages explaining your changes.
-- **Pull Requests:** Open a pull request with a clear description of your changes and reference any related issues. Our maintainers will review and provide feedback.
-- **Issues:** If you encounter a bug or have a feature suggestion, please open an issue before starting work to discuss your idea.
-- **Documentation:** Update relevant documentation and tests as needed with your changes.
+Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
+
+- Using conventional commits for automatic versioning
+- Development workflow and testing
+- How our CI/CD pipeline works
+- Code standards and best practices
 
 Thank you for helping improve the project!
 
-# History
+## History
 
 This work is based on the awesome work done by [o20ne/clamav-rest](https://github.com/o20ne/clamav-rest) which is based on [niilo/clamav-rest](https://github.com/niilo/clamav-rest) which in turn is based on the original code from [osterzel/clamav-rest](https://github.com/osterzel/clamav-rest).
 
-# References
+## References
 
 - [The ClamAV project](https://www.clamav.net)
 - [The ajilach/clamav-rest project](https://github.com/ajilach/clamav-rest)
 
-# License
+## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for details.
