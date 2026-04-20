@@ -1,7 +1,19 @@
 #!/bin/bash
 
+# Copy Cloud Foundry system certs to the certificate store so that clamav can securely communicate
+# with the egress proxy.
+if [ "$(whoami)" = "root" ]; then
+    if [ -n "$CF_SYSTEM_CERT_PATH" ]; then
+        echo "Copying Cloud Foundry system certs"
+        cp "$CF_SYSTEM_CERT_PATH"/*.crt /usr/local/share/ca-certificates/
+        update-ca-certificates
+    fi
+    # Replace current process as clamav user
+    echo "Dropping permissions"
+    exec su-exec clamav "$0" "$@"
+fi
+
 cp /etc/clamav/* /clamav/etc/
-chmod 0700 /clamav/etc/freshclam.conf
 
 # Replace values in freshclam.conf
 sed -i 's/^#\?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' /clamav/etc/freshclam.conf

@@ -45,11 +45,29 @@ ClamAV virus/malware scanner with REST API. This is a two in one docker image wh
 ## Introduction
 
 This is a two in one docker image which runs the open source virus scanner ClamAV (<https://www.clamav.net/>), performs automatic virus definition updates as a background process and provides a REST API interface to interact with the ClamAV process.
+> **📢 New in December 2025:** We've migrated to semantic versioning! Docker images are now tagged with version numbers like `v1.2.3` instead of dates. Releases are automatically created when pull requests are merged, with versions determined by [conventional commit messages](CONTRIBUTING.md). Check our [Releases page](https://github.com/ajilach/clamav-rest/releases) for detailed changelogs.
 
 ## FAC Updates
+
+### Reloading the Database Behind a Proxy
 An issue was found using `echo "RELOAD" | nc 127.0.0.1 3310` behind a proxy to force reload the sig database. Due to this, and with us rebuilding the image weekly to get a new sha256, on top of our terraform redeploying clamav during the week with new sha256's, force reloading the database like this makes it impossible to use the scanner, as `3310` gets soft locked on the database update, and causes any subsequent scans to fail.
 
-> **📢 New in December 2025:** We've migrated to semantic versioning! Docker images are now tagged with version numbers like `v1.2.3` instead of dates. Releases are automatically created when pull requests are merged, with versions determined by [conventional commit messages](CONTRIBUTING.md). Check our [Releases page](https://github.com/ajilach/clamav-rest/releases) for detailed changelogs.
+### Cloud Foundry System Certificates
+ClamAV communicates with `database.clamav.net` to download virus signature updates via the egress proxy. 
+Cloud Foundry injects internal CA certificates runtime via the `CF_SYSTEM_CERT_PATH` 
+environment variable. These certs are required to establish a trusted connection with the egress proxy.
+
+With buildpack based applications Cloud Foundry automatically copies these certs into the system certificate 
+store, however Docker based applications require this to be handled manually. With out them freshclam fails with the following error:
+```bash
+WARNING: Download failed (56) WARNING:  Message: Failure when receiving data from the peer
+WARNING: Can't download daily.cvd from https://database.clamav.net/daily.cvd
+```
+To resolve this, the Dockerfile and entrypoint script were updated to run as root on startup, copy the CF 
+system certs from `$CF_SYSTEM_CERT_PATH` into `/usr/local/share/ca-certificates/`, and run 
+`update-ca-certificates` to add them to the trust store before dropping permissions to the `clamav` user 
+for the remainder of the process. Because the container no longer sets the `clamav` user in the Dockerfile, 
+SSH access defaults to root and should be disabled in production.
 
 ## Installation
 
