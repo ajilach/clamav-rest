@@ -1,0 +1,52 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clamav-signature-age-check
+  namespace: clamav-rest
+spec:
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: check-signature-age
+            image: python:3.12-alpine
+            env:
+            - name: VERSION_URL
+              value: http://clamav-rest-service:9000/version
+            - name: MAX_AGE_SECONDS
+              value: "172800"
+            command:
+            - python3
+            - -c
+            - |
+              import json
+              import os
+              import sys
+              import urllib.request
+              from datetime import datetime
+
+              version_url = os.environ["VERSION_URL"]
+              max_age_seconds = int(os.environ["MAX_AGE_SECONDS"])
+
+              with urllib.request.urlopen(version_url, timeout=10) as response:
+                  payload = json.load(response)
+
+              signature_date = payload["Signature_date"]
+
+              # Adjust the format string if your ClamAV build emits a different date format.
+              signature_time = datetime.strptime(signature_date, "%a %b %d %H:%M:%S %Y")
+              age_seconds = int(datetime.now().timestamp() - signature_time.timestamp())
+
+              if age_seconds > max_age_seconds:
+                  print(f"ALERT: ClamAV signatures are {age_seconds} seconds old")
+                  sys.exit(1)
+
+              print(f"OK: ClamAV signatures are {age_seconds} seconds old")

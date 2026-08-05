@@ -19,20 +19,20 @@ spec:
       labels:
         app: clamav-rest-service
     spec:
-      nodeSelector:
-        "beta.kubernetes.io/os": linux
       containers:
         - name: clamav-rest-service
           image: docker.io/ajilaag/clamav-rest:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 9443
-            - containerPort: 9000
+            - name: https
+              containerPort: 9443
+            - name: http
+              containerPort: 9000
           env:
             - name: MAX_FILE_SIZE
               valueFrom:
                 configMapKeyRef:
-                  name: clamav-rest-service-config
+                  name: clamav-rest-config
                   key: MAX_FILE_SIZE
           resources:
             requests:

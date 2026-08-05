@@ -6,7 +6,11 @@ metadata:
   namespace: clamav-rest
 spec:
   ports:
-  - port: 443
-    targetPort: 9443
+  - name: http
+    port: 9000
+    targetPort: http
+  - name: https
+    port: 9443
+    targetPort: https
   selector:
     app: clamav-rest-service
