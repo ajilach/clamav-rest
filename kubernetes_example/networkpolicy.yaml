@@ -24,10 +24,10 @@ spec:
   - from:
     - namespaceSelector:
         matchLabels:
-          name: monitoring
-    - podSelector:
+          kubernetes.io/metadata.name: monitoring
+      podSelector:
         matchLabels:
           app: prometheus
     ports:
     - protocol: TCP
-      port: 9443      
+      port: 9443

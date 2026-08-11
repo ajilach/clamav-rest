@@ -33,8 +33,8 @@ spec:
     tlsConfig:
       insecureSkipVerify: true
   namespaceSelector:
-    matchNames: 
-    - clamav-rest-service
+    matchNames:
+    - clamav-rest
   selector:
     matchLabels:
       app: clamav-rest-service
