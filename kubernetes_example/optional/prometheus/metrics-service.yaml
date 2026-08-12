@@ -11,8 +11,8 @@ spec:
   ports:
   - name: metrics
     protocol: TCP
-    port: 443
-    targetPort: 9443
+    port: 9443
+    targetPort: https
   selector:
     app: clamav-rest-service
 ---
@@ -20,7 +20,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: clamav-rest-service
-  namespace: monitoring
+  namespace: clamav-rest
   labels:
     release: kube-prometheus-stack
     app: clamav-rest-service
@@ -33,8 +33,8 @@ spec:
     tlsConfig:
       insecureSkipVerify: true
   namespaceSelector:
-    matchNames: 
-    - clamav-rest-service
+    matchNames:
+    - clamav-rest
   selector:
     matchLabels:
       app: clamav-rest-service

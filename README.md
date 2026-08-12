@@ -23,8 +23,12 @@ ClamAV virus/malware scanner with REST API. This is a two in one docker image wh
   - [Airgapped Environments](#airgapped-environments)
   - [Networking](#networking)
   - [Running on Kubernetes](#running-on-kubernetes)
+    - [Running the sample set on `kind`](#running-the-sample-set-on-kind)
 - [Maintenance / Monitoring](#maintenance--monitoring)
   - [Shell Access](#shell-access)
+  - [Monitoring Signature Age](#monitoring-signature-age)
+    - [Using `clamav-rest-sigmon`](#using-clamav-rest-sigmon)
+    - [Monitoring Signature Age via `/version`](#monitoring-signature-age-via-version)
   - [Prometheus](#prometheus)
 - [Development](#development)
   - [Building the golang binary locally](#building-the-golang-binary-locally)
@@ -300,8 +304,60 @@ If you are distributing the image into multiple offline environments, the safest
 
 ### Running on Kubernetes
 
-Please refer to the `kubernetes_example/` folder on how to configure the service.  
-A way to mount a data directory from a pvc has been added to the manifest. Uncomment it to use it.
+The manifests in this section have been tested on a best-effort basis with `kind`. That gives a practical local validation path, but it also comes with limitations, most notably that CRD-based resources such as `ServiceMonitor` are not available unless you install the corresponding operators first.
+
+> [!NOTE]
+> Optional Kubernetes features are described in the next section, [Maintenance / Monitoring](#maintenance--monitoring).
+
+Sample manifests are provided in `kubernetes_example/`.
+The default runnable sample set deploys all resources into the `clamav-rest` namespace:
+
+- `Namespace`
+- `ConfigMap`
+- `Deployment`
+- `Service`
+- `NetworkPolicy`
+
+A way to mount a data directory from a PVC has been added to the Deployment manifest. Uncomment it to use it.
+
+Optional features are organized as separate kustomize packages and are not included by `kubectl apply -k kubernetes_example/`:
+
+- `kubernetes_example/optional/signature-age-check/` provides the `/version` signature-age CronJob.
+- `kubernetes_example/optional/prometheus/` provides the metrics Service, ingress policy, and `ServiceMonitor`. The `ServiceMonitor` requires Prometheus Operator-compatible CRDs.
+
+#### Running the sample set on `kind`
+
+The commands below assume you want a local test cluster named `clamav-rest`:
+
+```bash
+kind create cluster --name clamav-rest
+kubectl cluster-info --context kind-clamav-rest
+kubectl config use-context kind-clamav-rest
+
+kubectl apply --dry-run=client -k kubernetes_example/
+
+kubectl apply -k kubernetes_example/
+kubectl -n clamav-rest rollout status deployment/clamav-rest-service --timeout=10m
+kubectl -n clamav-rest get pods,svc,networkpolicy
+```
+
+On first startup the Pods may take several minutes to become Ready because ClamAV downloads and loads signature databases during boot.
+
+Apply optional features separately as needed:
+
+```bash
+kubectl apply -k kubernetes_example/optional/signature-age-check/
+
+# Requires Prometheus Operator-compatible CRDs.
+kubectl apply -k kubernetes_example/optional/prometheus/
+```
+
+To clean up the local `kind` test environment:
+
+```bash
+kubectl delete namespace clamav-rest --ignore-not-found=true
+kind delete cluster --name clamav-rest
+```
 
 ## Maintenance / Monitoring
 
@@ -320,6 +376,82 @@ was started with this `/clamav/etc/clamd.conf` referenced in `entrypoint.sh`.
 ```bash
 clamscan --database=/clamav/data --version
 ```
+
+### Monitoring Signature Age
+
+#### Using `clamav-rest-sigmon`
+
+The sister project [`clamav-rest-sigmon`](https://github.com/arizon-dread/clamav-rest-sigmon) is specifically built to monitor the signature age of `clamav-rest`. It can run as a sidecar, a standalone container, or a Kubernetes CronJob and obtains the loaded signature date from the `clamav-rest` API.
+
+In server mode it exposes `GET /health/signature-age`, returning HTTP `200` while the signatures are within the configured maximum age and HTTP `420` when they are too old. The threshold defaults to 26 hours and can be configured with `MAX_SIGNATURE_AGE_HOURS` or overridden per request with the `maxAgeHours` query parameter. It also supports a one-shot mode suitable for CronJobs. See the [project documentation](https://github.com/arizon-dread/clamav-rest-sigmon#readme) for deployment and configuration details.
+
+#### Monitoring Signature Age via `/version`
+
+Approach: polling the `/version` endpoint and alerting on the age of `Signature_date`. The endpoint returns the ClamAV version together with the signature version and the date of the loaded signature database:
+
+> [!TIP]
+> A runnable Kubernetes version of this approach is provided below and in [`kubernetes_example/optional/signature-age-check/`](kubernetes_example/optional/signature-age-check/).
+
+```json
+{ "Clamav": "<engine version>", "Signature": "<signature version>", "Signature_date": "<signature date>" }
+```
+
+Suggested steps in detail:
+
+1. Call `GET /version` on a schedule from your host, a cron job, or any external monitoring tool.
+2. Parse `Signature_date` from the JSON response.
+3. Convert that date to a Unix timestamp in your preferred scripting/runtime environment.
+4. Compare it with the current time.
+5. Trigger an alert if the age exceeds your threshold, for example 24 hours, 48 hours, or 7 days.
+
+Example shell pattern using `curl` and `python3`:
+
+```bash
+version_json=$(curl -fsS http://localhost:9000/version)
+python3 -c '
+import json
+import sys
+from datetime import datetime
+
+payload = json.loads(sys.argv[1])
+max_age_seconds = int(sys.argv[2])
+
+signature_date = payload["Signature_date"]
+
+# Adjust the format string if your ClamAV build emits a different date format.
+signature_time = datetime.strptime(signature_date, "%a %b %d %H:%M:%S %Y")
+age_seconds = int(datetime.now().timestamp() - signature_time.timestamp())
+
+if age_seconds > max_age_seconds:
+    print(f"ALERT: ClamAV signatures are {age_seconds} seconds old")
+    sys.exit(1)
+
+print(f"OK: ClamAV signatures are {age_seconds} seconds old")
+' "$version_json" "$((48 * 60 * 60))"
+```
+
+For Kubernetes, a runnable example is provided in `kubernetes_example/optional/signature-age-check/`. Apply it with `kubectl apply -k kubernetes_example/optional/signature-age-check/`. It polls `http://clamav-rest-service:9000/version` from inside the `clamav-rest` namespace and exits non-zero when the configured age threshold is exceeded.
+
+You can validate the CronJob manually without waiting for the schedule:
+
+```bash
+kubectl -n clamav-rest create job --from=cronjob/clamav-signature-age-check clamav-signature-age-check-manual
+kubectl -n clamav-rest wait --for=condition=complete job/clamav-signature-age-check-manual --timeout=5m
+kubectl -n clamav-rest logs job/clamav-signature-age-check-manual
+kubectl -n clamav-rest get jobs,pods
+```
+
+To exercise the failure path, temporarily lower the threshold, run another manual Job, and then restore the default:
+
+```bash
+kubectl -n clamav-rest set env cronjob/clamav-signature-age-check MAX_AGE_SECONDS=1
+kubectl -n clamav-rest create job --from=cronjob/clamav-signature-age-check clamav-signature-age-check-fail
+kubectl -n clamav-rest wait --for=condition=failed job/clamav-signature-age-check-fail --timeout=5m
+kubectl -n clamav-rest logs job/clamav-signature-age-check-fail
+kubectl -n clamav-rest set env cronjob/clamav-signature-age-check MAX_AGE_SECONDS=172800
+```
+
+In Kubernetes, the usual pattern is to let the `CronJob` exit non-zero when the threshold is exceeded and then have your cluster monitoring stack alert on failed Jobs or failing Pods. Outside Kubernetes, you can wire the same logic into any alerting mechanism you already use.
 
 ### Prometheus
 
