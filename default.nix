@@ -27,7 +27,7 @@ in
     };
 
     proxyVendor = true;
-    vendorHash = "sha256-Ek25Yopo3p662s88Ylqi/I5WyToc3m8t2axPieDs/cU=";
+    vendorHash = "sha256-5/BTWyk+seUM4KzcksHVVvqfFsjoHk8tL3tPamIh4h4=";
 
     doCheck = false;
     meta = with lib; {
