@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.26.0
+ARG GO_VERSION=1.27.1
 FROM golang:${GO_VERSION}-alpine AS build
 
 # Update libraries
