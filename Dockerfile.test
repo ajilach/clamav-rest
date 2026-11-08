@@ -42,7 +42,7 @@ RUN sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/clamd.conf \
 
 RUN freshclam --quiet --no-dns
 
-COPY entrypoint.sh /usr/bin/
+COPY entrypoint.sh seed-database.sh /usr/bin/
 COPY --from=build /out/clamav-rest /usr/bin/clamav-rest
 
 RUN chown -R clamav:clamav /clamav \
@@ -88,5 +88,10 @@ RUN chmod 0755 /opt/clamav-rest/entrypoint_tests.sh /opt/clamav-rest/run-go-test
     && chown -R clamav:clamav /clamav/test
 
 USER clamav
+
+# Unit tests for seeding the database directory, run as non-root user
+COPY tests/seed-database_test.sh /opt/clamav-rest/tests/
+RUN /opt/clamav-rest/tests/seed-database_test.sh /usr/bin/seed-database.sh /var/lib/clamav
+
 ENTRYPOINT [ "/opt/clamav-rest/entrypoint_tests.sh" ]
 CMD [ "test" ]
