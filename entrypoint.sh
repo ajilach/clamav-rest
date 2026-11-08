@@ -1,23 +1,70 @@
 #!/bin/bash
 
 FRESHCLAM_CONF=/clamav/etc/freshclam.conf
+LOG_FILE=/var/log/clamav/clamav.log
 
-# A custom freshclam.conf is one that is mounted into the container, e.g. with a docker bind mount or
-# from a Kubernetes ConfigMap. It is detected by being a mount point of its own or by not being writable.
-# A copy written by this script on an earlier start (persistent /clamav volume) is neither, so it is
-# regenerated and changes to the environment variables still apply.
+# Messages of this script also go to the log file, like the output of the services started below.
+log() {
+    echo "$*" | tee -a "$LOG_FILE" 2>/dev/null
+}
+log_error() {
+    echo "$*" | tee -a "$LOG_FILE" >&2 2>/dev/null
+}
+
+# conf_has <option> [<value>...] checks whether freshclam.conf sets the option to one of the values, or to
+# any value if none are given. Option names are case-sensitive, like in freshclam.
+conf_has() {
+    awk -v opt="$1" -v vals="${*:2}" '
+        BEGIN { n = split(vals, v, " ") }
+        $1 == opt && NF >= 2 {
+            val = $2
+            gsub(/^"|"$/, "", val)
+            if (n == 0) found = 1
+            for (i = 1; i <= n; i++) if (val == v[i]) found = 1
+        }
+        END { exit !found }' "$FRESHCLAM_CONF"
+}
+
+# CUSTOM_FRESHCLAM_CONF decides whether an existing /clamav/etc/freshclam.conf is provided by the user and
+# must be left untouched:
+#   auto (default)  custom if the file is mounted into the container (docker bind mount, Kubernetes
+#                   ConfigMap) or is not writable. A copy written by this script on an earlier start
+#                   (persistent /clamav volume) is neither, so it is regenerated.
+#   true            always keep an existing file, e.g. one edited directly on a persistent volume
+#   false           always regenerate the file from the defaults and the environment variables
 custom_freshclam_conf=false
-if [ -e "$FRESHCLAM_CONF" ]; then
-    if [ ! -w "$FRESHCLAM_CONF" ] || awk -v p="$FRESHCLAM_CONF" '$5 == p { found = 1 } END { exit !found }' /proc/self/mountinfo; then
-        custom_freshclam_conf=true
-    fi
-fi
+case "${CUSTOM_FRESHCLAM_CONF:-auto}" in
+    true)
+        if [ -e "$FRESHCLAM_CONF" ]; then
+            custom_freshclam_conf=true
+        else
+            log "CUSTOM_FRESHCLAM_CONF is true, but there is no $FRESHCLAM_CONF yet. Using the default configuration."
+        fi
+        ;;
+    false)
+        ;;
+    auto)
+        if [ -e "$FRESHCLAM_CONF" ]; then
+            if awk -v p="$FRESHCLAM_CONF" '$5 == p { found = 1 } END { exit !found }' /proc/self/mountinfo; then
+                custom_freshclam_conf=true
+            elif [ ! -w "$FRESHCLAM_CONF" ]; then
+                custom_freshclam_conf=true
+                log "$FRESHCLAM_CONF is not writable and therefore treated as custom. Set CUSTOM_FRESHCLAM_CONF=false to regenerate it."
+            fi
+        fi
+        ;;
+    *)
+        log_error "ERROR: CUSTOM_FRESHCLAM_CONF must be auto, true or false, got '$CUSTOM_FRESHCLAM_CONF'."
+        exit 1
+        ;;
+esac
 
 for f in /etc/clamav/*; do
-    if [ "$custom_freshclam_conf" = true ] && [ "$(basename "$f")" = "freshclam.conf" ]; then
+    if [ "$custom_freshclam_conf" = true ] && [ "${f##*/}" = "freshclam.conf" ]; then
         continue
     fi
-    cp "$f" /clamav/etc/
+    # -f replaces files that are not writable, e.g. a copy owned by another user from an earlier start
+    cp -f "$f" /clamav/etc/ || log_error "ERROR: unable to copy $f to /clamav/etc/"
 done
 
 # Replace values in clamd.conf
@@ -41,14 +88,18 @@ sed -i 's/^#PCREMatchLimit.*$/PCREMatchLimit '"$PCRE_MATCHLIMIT"'/g' /clamav/etc
 sed -i 's/^#PCRERecMatchLimit .*$/PCRERecMatchLimit '"$PCRE_RECMATCHLIMIT"'/g' /clamav/etc/clamd.conf
 
 if [ "$custom_freshclam_conf" = true ]; then
-    echo "Using custom $FRESHCLAM_CONF, SIGNATURE_CHECKS and PROXY_* environment variables are ignored."
-    for directive in "Foreground yes" "DatabaseDirectory /clamav/data" "NotifyClamd /clamav/etc/clamd.conf"; do
-        if ! grep -qiE "^[[:space:]]*${directive// /[[:space:]]+}[[:space:]]*$" "$FRESHCLAM_CONF"; then
-            echo "WARNING: custom $FRESHCLAM_CONF does not contain '$directive', which is required for the container to work correctly." >&2
-        fi
-    done
-    if ! grep -qiE "^[[:space:]]*(DatabaseMirror|PrivateMirror)[[:space:]]+[^[:space:]]" "$FRESHCLAM_CONF"; then
-        echo "WARNING: custom $FRESHCLAM_CONF contains neither DatabaseMirror nor PrivateMirror, freshclam will not be able to update the database." >&2
+    log "Using custom $FRESHCLAM_CONF, SIGNATURE_CHECKS and PROXY_* environment variables are ignored."
+    if [ ! -r "$FRESHCLAM_CONF" ]; then
+        log_error "ERROR: custom $FRESHCLAM_CONF is not readable for user $(id -un), freshclam will not be able to start."
+    else
+        conf_has Foreground yes true 1 ||
+            log_error "WARNING: custom $FRESHCLAM_CONF does not set 'Foreground yes', which is required for the container to work correctly."
+        conf_has DatabaseDirectory /clamav/data /clamav/data/ ||
+            log_error "WARNING: custom $FRESHCLAM_CONF does not set 'DatabaseDirectory /clamav/data', which is required for the container to work correctly."
+        conf_has NotifyClamd /clamav/etc/clamd.conf ||
+            log_error "WARNING: custom $FRESHCLAM_CONF does not set 'NotifyClamd /clamav/etc/clamd.conf', which is required for the container to work correctly."
+        conf_has DatabaseMirror || conf_has PrivateMirror ||
+            log_error "WARNING: custom $FRESHCLAM_CONF contains neither DatabaseMirror nor PrivateMirror, freshclam will not be able to update the database."
     fi
 else
     # Replace values in freshclam.conf
@@ -70,7 +121,7 @@ else
         # It's not required, but if they also provided a username, then configure both the username and password
         if [ -n "$PROXY_USERNAME" ]; then
             if [ -z "$PROXY_PASSWORD" ]; then
-                echo "ERROR: PROXY_PASSWORD must be set when PROXY_USERNAME is provided." >&2
+                log_error "ERROR: PROXY_PASSWORD must be set when PROXY_USERNAME is provided."
                 exit 1
             fi
             sed -i 's/^#HTTPProxyUsername .*$/HTTPProxyUsername '"$PROXY_USERNAME"'/g' "$FRESHCLAM_CONF"
