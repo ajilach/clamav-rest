@@ -272,6 +272,7 @@ Tips for running airgapped:
 
 - Preload the image before disconnecting from the internet, then start it with `docker compose up -d --pull never` so Docker does not try to fetch anything.
 - Keep `/clamav/data` on a persistent volume so imported database updates survive container recreation.
+- On start, every database (`main`, `daily`, `bytecode`) that is missing in `/clamav/data` is copied from the snapshot bundled with the image. Existing database files are never overwritten, other files in the directory (e.g. `lost+found` on a fresh volume) are ignored.
 - Verify the actual database version after startup with `curl http://localhost:9000/version` or `clamscan --database=/clamav/data --version` inside the container.
 - Test offline behavior on a connected machine by loading the image first, disconnecting the host, and then starting the stack locally.
 

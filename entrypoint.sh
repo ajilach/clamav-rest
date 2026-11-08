@@ -52,9 +52,19 @@ if [ -n "$PROXY_SERVER" ]; then
     fi
 fi
 
-if [ -z "$(ls -A /clamav/data)" ]; then
-  cp /var/lib/clamav/* /clamav/data/
-fi
+# Seed the database directory with the databases bundled in the image. This is checked per database and
+# only looks at the database files themselves, because a persistent volume can contain other files
+# (e.g. lost+found, hidden files or a freshclam.dat left over from a failed update) without containing
+# a database. Without a database clamd refuses to start.
+for db in /var/lib/clamav/*.cvd /var/lib/clamav/*.cld; do
+    [ -e "$db" ] || continue
+    name=$(basename "$db")
+    name=${name%.*}
+    if [ ! -s "/clamav/data/$name.cvd" ] && [ ! -s "/clamav/data/$name.cld" ]; then
+        echo "No $name database found in /clamav/data, using the one bundled with the image"
+        cp "$db" /clamav/data/
+    fi
+done
 
 (
     freshclam --config-file=/clamav/etc/freshclam.conf --daemon &
