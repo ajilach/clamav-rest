@@ -43,7 +43,7 @@ RUN sed -i 's/^#Foreground .*$/Foreground yes/g' /etc/clamav/clamd.conf \
 
 RUN freshclam --quiet --no-dns
 
-COPY entrypoint.sh /usr/bin/
+COPY entrypoint.sh seed-database.sh /usr/bin/
 
 RUN mkdir -p /clamav/etc \
     && mkdir -p /clamav/data \

@@ -52,9 +52,8 @@ if [ -n "$PROXY_SERVER" ]; then
     fi
 fi
 
-if [ -z "$(ls -A /clamav/data)" ]; then
-  cp /var/lib/clamav/* /clamav/data/
-fi
+# Make sure /clamav/data contains a usable database, falling back to the one bundled with the image.
+seed-database.sh /var/lib/clamav /clamav/data 2>&1 | tee -a /var/log/clamav/clamav.log
 
 (
     freshclam --config-file=/clamav/etc/freshclam.conf --daemon &
