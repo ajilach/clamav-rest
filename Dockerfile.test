@@ -9,7 +9,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o /out/clamav-rest .
+RUN go vet . && go test -count=1 . && go build -o /out/clamav-rest .
 
 FROM golang:${GO_VERSION}-alpine AS test
 
@@ -74,6 +74,8 @@ ENV PCRE_MATCHLIMIT=100000
 ENV PCRE_RECMATCHLIMIT=2000
 ENV SIGNATURE_CHECKS=2
 ENV ALLOW_ORIGINS=*
+# the /scanUrl end-to-end tests serve their files from localhost
+ENV SCAN_URL_ALLOW_PRIVATE_NETWORKS=true
 ENV GOCACHE=/clamav/test/.cache/go-build
 ENV GOMODCACHE=/clamav/test/.cache/go-mod
 

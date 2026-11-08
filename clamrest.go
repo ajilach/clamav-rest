@@ -449,6 +449,7 @@ func main() {
 	mux.HandleFunc("GET /scanFile", scanFileHandler)
 	mux.HandleFunc("GET /scanPath", scanPathHandler)
 	mux.HandleFunc("POST /scanHandlerBody", scanHandlerBody)
+	mux.HandleFunc("POST /scanUrl", newURLScanner(loadScanURLConfig(opts), opts["CLAMD_PORT"]).handle)
 	mux.HandleFunc("GET /version", clamversion)
 	mux.HandleFunc("GET /", home)
 

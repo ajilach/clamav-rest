@@ -16,6 +16,7 @@ ClamAV virus/malware scanner with REST API. This is a two in one docker image wh
 - [Endpoints](#endpoints)
   - [Utility endpoints](#utility-endpoints)
   - [Scanning endpoints](#scanning-endpoints)
+  - [Scanning a file by URL](#scanning-a-file-by-url)
 - [Configuration](#configuration)
   - [Environment Variables](#environment-variables)
   - [TLS Certificates](#tls-certificates)
@@ -147,16 +148,21 @@ Content-Length: 33
 ### Status Codes
 
 - 200 - OK: clean file = no KNOWN infections
-- 400 - ClamAV returned general error for file
+- 400 - ClamAV returned general error for file, or the request to `/scanUrl` is invalid
+- 403 - Forbidden: the URL passed to `/scanUrl` is not allowed (see [Scanning a file by URL](#scanning-a-file-by-url))
 - 406 - Not Acceptable: payload is infected
 - 412 - Unable to parse the file provided. This also happens when you call `scanFile` and the uri parameter path doesn't point to a file on disk.
 - 413 - Request entity too large: the file exceeds the scannable limit. Set MAX_FILE_SIZE to scan larger files
 - 422 - Filename is missing in MimePart
 - 501 - Unknown request
+- 502 - Bad Gateway: `/scanUrl` was unable to download the file, e.g. the remote server responded with an error
+- 504 - Gateway Timeout: `/scanUrl` did not finish downloading the file within `SCAN_URL_TIMEOUT`
 
 ### Security considerations
 
 In order to remain backward compatible, we allow all CORS related origins by setting `ALLOW_ORIGINS` to `*`. Please change is to a list of allowed origins or to blank for only allowing same origin requests for increased security. See the [Configuration Section](#configuration) below for more details on `ALLOW_ORIGINS`.
+
+The `/scanUrl` endpoint makes clamav-rest download files from URLs supplied by the client. To prevent it from being abused to reach internal services, private, loopback and link-local addresses (including cloud metadata endpoints) are refused by default. Restrict the reachable hosts further with `SCAN_URL_ALLOWED_HOSTS`. See [Scanning a file by URL](#scanning-a-file-by-url) for details.
 
 ## Endpoints
 
@@ -175,8 +181,35 @@ In order to remain backward compatible, we allow all CORS related origins by set
 | `/v2/scan`                        | Scanning endpoint, accepts a multipart/form-data request with one or more files and returns a json array with status, description and filename, along with the most severe http status code that was possible to determine. **example response:** `[{"Status":"OK","Description":"","FileName":"checksums.txt"}]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `/scanFile?path=/folder/file.txt` | A scanning endpoint that will scan a file using SCAN. A practical example would be to mount a share into the container where you put a file into a folder, call `/scanFile` and let it scan the content.**example response:** `{"Status":"FOUND","Description":"Win.Test.EICAR_HDB-1","FileName":"/clamav/tmp/eicar.test"}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/scanPath?path=/folder`          | A scanning endpoint that will scan a folder using ALLMATCHSCAN. A practical example would be to mount a share into the container where you dump files into a folder, call `/scanPath` and let it scan the whole directory content, then continue processing them.**example response:** `[{"Raw":"/folder: OK","Description":"","Path":"/folder","Hash":"","Size":0,"Status":"OK"}]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `/scanUrl`                        | Scanning endpoint that downloads a file from a URL, e.g. a pre-signed S3 URL, and streams it to ClamAV. Accepts a POST request with a json body like `{"url": "https://..."}` and returns a json object with status, description and filename. See [Scanning a file by URL](#scanning-a-file-by-url). **example response:** `{"Status":"FOUND","Description":"Win.Test.EICAR_HDB-1","FileName":"eicar.test"}` |
 | `/scanHandlerBody`                | This endpoint scans the content in the HTTP POST request body. **example response:** `{OK   200}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `/scan`                           | [DEPRECATED] This endpoint scans in a similar manner to `/v2/scan` but does return one or more json objects without a valid json structure in between (no json array). It also does not include the filename as a json property. This endpoint is still present in the api for backwards compatibility for those who still use it, but it will also return headers indicating deprecation and pointing out the new, updated endpoint, `/v2/scan`. This endpoint does accept a multipart/form-data endpoint that by http standards can accept multiple files, and does scan them all, but the implementation of the endpoint indicates that it was originally (probably) meant to only scan one file at a time. Please don't rely on this endpoint to exist in the future. This project has the intention to sunset it to keep the project focus on a well maintainted set of features.**example response:** `{"Status":"OK","Description":""}` |
+
+### Scanning a file by URL
+
+Instead of uploading a file, you can let clamav-rest fetch it. This is useful when the file is already stored somewhere, for example in an S3 bucket: create a pre-signed URL and pass it to `/scanUrl`. The file is streamed to ClamAV while it is downloaded, it is never written to disk.
+
+```bash
+$ curl -i -H "Content-Type: application/json" \
+    -d "{\"url\": \"$(aws s3 presign s3://my-bucket/uploads/invoice.pdf --expires-in 300)\"}" \
+    http://localhost:9000/scanUrl
+
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{"Status":"OK","Description":"","FileName":"invoice.pdf"}
+```
+
+The response uses the same status codes as the other scanning endpoints. In addition, `403` is returned if the URL is not allowed, `502` if the file could not be downloaded (the remote status is part of the `Description`) and `504` if the download timed out. Query strings are never logged or returned, so the signature of a pre-signed URL does not leak.
+
+The following rules apply to every URL, including redirects (at most 5):
+
+- Only `http` and `https` URLs are accepted.
+- Hosts that resolve to private, loopback, link-local or other non-public addresses are refused, unless `SCAN_URL_ALLOW_PRIVATE_NETWORKS` is set to `true`. Set it if you want to scan files from a service in your own network, e.g. a MinIO instance in the same cluster, and combine it with `SCAN_URL_ALLOWED_HOSTS`.
+- If `SCAN_URL_ALLOWED_HOSTS` is set, only those hosts can be fetched from.
+- HTTP proxy environment variables are not used for downloads.
+
+Files larger than `MAX_FILE_SIZE` are rejected by ClamAV with a `413`, just like uploaded files.
 
 ## Configuration
 
@@ -205,6 +238,9 @@ Below is the complete list of available options that can be used to customize yo
 | `PROXY_PORT`          | The port for the proxy server. Default disabled (optional)                                              |
 | `PROXY_USERNAME`      | The username for the proxy server. Default disabled (optional)                                          |
 | `PROXY_PASSWORD`      | The password for the proxy server. Default disabled (optional)                                          |
+| `SCAN_URL_ALLOWED_HOSTS` | Semicolon separated list of hosts `/scanUrl` may download from, e.g. `minio.internal;*.amazonaws.com`. A leading `*.` matches all subdomains. Defaults to all hosts (optional) |
+| `SCAN_URL_ALLOW_PRIVATE_NETWORKS` | Allow `/scanUrl` to download from private, loopback and link-local addresses. Defaults to `false` |
+| `SCAN_URL_TIMEOUT`    | Maximum time `/scanUrl` may take to download a file, as a Go duration like `30s` or `5m`. Defaults to `2m` |
 
 ### TLS Certificates
 
