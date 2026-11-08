@@ -1,16 +1,28 @@
 #!/bin/bash
 
-cp /etc/clamav/* /clamav/etc/
+FRESHCLAM_CONF=/clamav/etc/freshclam.conf
 
-# Replace values in freshclam.conf
-sed -i 's/^#\?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' /clamav/etc/freshclam.conf
-sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/freshclam.conf
-sed -i 's/^#\?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' /clamav/etc/freshclam.conf
+# A custom freshclam.conf is one that is mounted into the container, e.g. with a docker bind mount or
+# from a Kubernetes ConfigMap. It is detected by being a mount point of its own or by not being writable.
+# A copy written by this script on an earlier start (persistent /clamav volume) is neither, so it is
+# regenerated and changes to the environment variables still apply.
+custom_freshclam_conf=false
+if [ -e "$FRESHCLAM_CONF" ]; then
+    if [ ! -w "$FRESHCLAM_CONF" ] || awk -v p="$FRESHCLAM_CONF" '$5 == p { found = 1 } END { exit !found }' /proc/self/mountinfo; then
+        custom_freshclam_conf=true
+    fi
+fi
+
+for f in /etc/clamav/*; do
+    if [ "$custom_freshclam_conf" = true ] && [ "$(basename "$f")" = "freshclam.conf" ]; then
+        continue
+    fi
+    cp "$f" /clamav/etc/
+done
+
+# Replace values in clamd.conf
 sed -i 's/^#TemporaryDirectory .*$/TemporaryDirectory \/clamav\/tmp/g' /clamav/etc/clamd.conf
 sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' /clamav/etc/clamd.conf
-
-# Replace values with environment variables in freshclam.conf
-sed -i 's/^#\?Checks .*$/Checks '"$SIGNATURE_CHECKS"'/g' /clamav/etc/freshclam.conf
 
 # Replace values with environment variables in clamd.conf
 sed -i 's/^#MaxScanSize .*$/MaxScanSize '"$MAX_SCAN_SIZE"'/g' /clamav/etc/clamd.conf
@@ -28,27 +40,44 @@ sed -i 's/^#MaxIconsPE .*$/MaxIconsPE '"$MAX_ICONSPE"'/g' /clamav/etc/clamd.conf
 sed -i 's/^#PCREMatchLimit.*$/PCREMatchLimit '"$PCRE_MATCHLIMIT"'/g' /clamav/etc/clamd.conf
 sed -i 's/^#PCRERecMatchLimit .*$/PCRERecMatchLimit '"$PCRE_RECMATCHLIMIT"'/g' /clamav/etc/clamd.conf
 
-# Use proxy for freshclam
-
-if [ -n "$PROXY_SERVER" ]; then
-  sed -i 's~^#HTTPProxyServer .*~HTTPProxyServer '"$PROXY_SERVER"'~g' /clamav/etc/freshclam.conf
-
-    # It's not required, but if they also provided a port, then configure it
-
-    if [ -n "$PROXY_PORT" ]; then
-        sed -i 's/^#HTTPProxyPort .*$/HTTPProxyPort '"$PROXY_PORT"'/g' /clamav/etc/freshclam.conf
-    fi
-
-    # It's not required, but if they also provided a username, then configure both the username and password
-    if [ -n "$PROXY_USERNAME" ]; then
-        if [ -z "$PROXY_PASSWORD" ]; then
-            echo "ERROR: PROXY_PASSWORD must be set when PROXY_USERNAME is provided." >&2
-            exit 1
+if [ "$custom_freshclam_conf" = true ]; then
+    echo "Using custom $FRESHCLAM_CONF, SIGNATURE_CHECKS and PROXY_* environment variables are ignored."
+    for directive in "Foreground yes" "DatabaseDirectory /clamav/data" "NotifyClamd /clamav/etc/clamd.conf"; do
+        if ! grep -qiE "^[[:space:]]*${directive// /[[:space:]]+}[[:space:]]*$" "$FRESHCLAM_CONF"; then
+            echo "WARNING: custom $FRESHCLAM_CONF does not contain '$directive', which is required for the container to work correctly." >&2
         fi
-        sed -i 's/^#HTTPProxyUsername .*$/HTTPProxyUsername '"$PROXY_USERNAME"'/g' /clamav/etc/freshclam.conf
-        sed -i 's~^#HTTPProxyPassword .*~HTTPProxyPassword '"$PROXY_PASSWORD"'~g' /clamav/etc/freshclam.conf
-        # Freshclam requires 0700 permissions if a password is set in the config.
-        chmod 0700 /clamav/etc/freshclam.conf
+    done
+    if ! grep -qiE "^[[:space:]]*(DatabaseMirror|PrivateMirror)[[:space:]]+[^[:space:]]" "$FRESHCLAM_CONF"; then
+        echo "WARNING: custom $FRESHCLAM_CONF contains neither DatabaseMirror nor PrivateMirror, freshclam will not be able to update the database." >&2
+    fi
+else
+    # Replace values in freshclam.conf
+    sed -i 's/^#\?NotifyClamd .*$/NotifyClamd \/clamav\/etc\/clamd.conf/g' "$FRESHCLAM_CONF"
+    sed -i 's/^#DatabaseDirectory .*$/DatabaseDirectory \/clamav\/data/g' "$FRESHCLAM_CONF"
+
+    # Replace values with environment variables in freshclam.conf
+    sed -i 's/^#\?Checks .*$/Checks '"$SIGNATURE_CHECKS"'/g' "$FRESHCLAM_CONF"
+
+    # Use proxy for freshclam
+    if [ -n "$PROXY_SERVER" ]; then
+        sed -i 's~^#HTTPProxyServer .*~HTTPProxyServer '"$PROXY_SERVER"'~g' "$FRESHCLAM_CONF"
+
+        # It's not required, but if they also provided a port, then configure it
+        if [ -n "$PROXY_PORT" ]; then
+            sed -i 's/^#HTTPProxyPort .*$/HTTPProxyPort '"$PROXY_PORT"'/g' "$FRESHCLAM_CONF"
+        fi
+
+        # It's not required, but if they also provided a username, then configure both the username and password
+        if [ -n "$PROXY_USERNAME" ]; then
+            if [ -z "$PROXY_PASSWORD" ]; then
+                echo "ERROR: PROXY_PASSWORD must be set when PROXY_USERNAME is provided." >&2
+                exit 1
+            fi
+            sed -i 's/^#HTTPProxyUsername .*$/HTTPProxyUsername '"$PROXY_USERNAME"'/g' "$FRESHCLAM_CONF"
+            sed -i 's~^#HTTPProxyPassword .*~HTTPProxyPassword '"$PROXY_PASSWORD"'~g' "$FRESHCLAM_CONF"
+            # Freshclam requires 0700 permissions if a password is set in the config.
+            chmod 0700 "$FRESHCLAM_CONF"
+        fi
     fi
 fi
 

@@ -234,14 +234,15 @@ You can also override the certificate paths using the `SSL_CERT` and `SSL_KEY` e
 
 For advanced freshclam configuration (e.g., custom database mirrors, private mirrors, or settings not exposed via environment variables), you can provide your own `freshclam.conf` file.
 
-When a custom `freshclam.conf` is detected, the entrypoint skips all freshclam-related configuration. This means the following environment variables are **ignored** when a custom config is provided: `SIGNATURE_CHECKS`, `PROXY_SERVER`, `PROXY_PORT`, `PROXY_USERNAME`, `PROXY_PASSWORD`.
+Mount the file to `/clamav/etc/freshclam.conf`. The entrypoint treats it as custom if it is mounted into the container (bind mount, ConfigMap) or if it is read-only, and then leaves it untouched and skips all freshclam-related configuration. This means the following environment variables are **ignored** when a custom config is provided: `SIGNATURE_CHECKS`, `PROXY_SERVER`, `PROXY_PORT`, `PROXY_USERNAME`, `PROXY_PASSWORD`.
 
-Your custom `freshclam.conf` must include these directives for the container to function correctly:
+Your custom `freshclam.conf` must include these directives for the container to function correctly. Without a `DatabaseMirror` (or `PrivateMirror`), freshclam exits right after the start and the database is never updated. The entrypoint logs a warning if one of them is missing.
 
 ```text
 Foreground yes
 DatabaseDirectory /clamav/data
 NotifyClamd /clamav/etc/clamd.conf
+DatabaseMirror database.clamav.net
 ```
 
 **Docker:**
@@ -254,7 +255,17 @@ docker run -p 9000:9000 \
 
 **Kubernetes:**
 
-Add the configuration to a ConfigMap and mount it as a volume. See the commented-out examples in `kubernetes_example/configmap.yaml` and `kubernetes_example/deployment.yaml`.
+Add the configuration to a ConfigMap and mount it as a volume using `subPath`, so that only this file is replaced. See the commented-out examples in `kubernetes_example/configmap.yaml` and `kubernetes_example/deployment.yaml`.
+
+A custom `freshclam.conf` is also the way to use a private database mirror, e.g. when the official CDN is not reachable or rate-limits your nodes:
+
+```text
+Foreground yes
+DatabaseDirectory /clamav/data
+NotifyClamd /clamav/etc/clamd.conf
+PrivateMirror https://clamav-mirror.example.com
+ScriptedUpdates no
+```
 
 ### Airgapped Environments
 
