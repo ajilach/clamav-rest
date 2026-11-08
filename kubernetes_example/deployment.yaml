@@ -74,6 +74,11 @@ spec:
           # optional: persisting the data directory
           # - name: clamav-data
           #   mountPath: /clamav/data
+          # optional: custom freshclam.conf from the ConfigMap in configmap.yaml
+          # - name: freshclam-conf
+          #   mountPath: /clamav/etc/freshclam.conf
+          #   subPath: freshclam.conf
+          #   readOnly: true
       # optional: mount TLS certs from a Kubernetes secret
       # kubectl create secret tls clamav-rest-tls --cert=server.crt --key=server.key -n clamav-rest
       # volumes:
@@ -89,6 +94,10 @@ spec:
       # - name: clamav-data
       #   persistentVolumeClaim:
       #     claimName: my-pvc
+      # optional: custom freshclam.conf
+      # - name: freshclam-conf
+      #   configMap:
+      #     name: clamav-rest-freshclam
       tolerations:
         - key: "node.kubernetes.io/unreachable"
           operator: "Exists"
