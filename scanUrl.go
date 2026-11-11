@@ -59,6 +59,8 @@ type scanURLConfig struct {
 	allowedHosts []string
 	// timeout limits the total time for downloading and scanning a single URL.
 	timeout time.Duration
+	// forbid scanURL endpoint
+	allowScanURL bool 
 }
 
 type scanURLRequest struct {
@@ -96,6 +98,14 @@ func loadScanURLConfig(opts map[string]string) scanURLConfig {
 		} else {
 			cfg.timeout = timeout
 		}
+	}
+	if v := opts["SCAN_URL_ALLOW"]; v != "" {
+		allow, err := strconv.ParseBool(v)
+		if err != nil {
+			log.Printf("Invalid value for SCAN_URL_ALLOW, defaulting to allow\n")
+			allow = true
+		}
+		cfg.allowScanURL = allow
 	}
 
 	return cfg
@@ -263,6 +273,10 @@ func fetchErrorResponse(err error, fileName string) scanResponse {
 
 // handle downloads the file behind the URL in the request body and streams it to clamd.
 func (s *urlScanner) handle(w http.ResponseWriter, r *http.Request) {
+	if !s.cfg.allowScanURL {
+		writeScanResponse(w,, errorResponse(http.StatusForbidden, "", "forbidden"))
+		return
+	}
 	var req scanURLRequest
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxScanURLRequestLength))
 	if err := dec.Decode(&req); err != nil {

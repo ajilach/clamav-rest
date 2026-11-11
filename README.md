@@ -238,6 +238,7 @@ Below is the complete list of available options that can be used to customize yo
 | `PROXY_PORT`          | The port for the proxy server. Default disabled (optional)                                              |
 | `PROXY_USERNAME`      | The username for the proxy server. Default disabled (optional)                                          |
 | `PROXY_PASSWORD`      | The password for the proxy server. Default disabled (optional)                                          |
+| `SCAN_URL_ALLOW`      | Allow the `/scanUrl` endpoint. Default true                                                             |
 | `SCAN_URL_ALLOWED_HOSTS` | Semicolon separated list of hosts `/scanUrl` may download from, e.g. `minio.internal;*.amazonaws.com`. A leading `*.` matches all subdomains. Defaults to all hosts (optional) |
 | `SCAN_URL_ALLOW_PRIVATE_NETWORKS` | Allow `/scanUrl` to download from private, loopback and link-local addresses. Defaults to `false` |
 | `SCAN_URL_TIMEOUT`    | Maximum time `/scanUrl` may take to download a file, as a Go duration like `30s` or `5m`. Defaults to `2m` |
