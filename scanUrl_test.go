@@ -108,7 +108,7 @@ func TestIsNonPublicAddr(t *testing.T) {
 }
 
 func TestHostAllowed(t *testing.T) {
-	cfg := scanURLConfig{allowedHosts: []string{"minio.internal", "*.amazonaws.com"}}
+	cfg := scanURLConfig{allowedHosts: []string{"minio.internal", "*.amazonaws.com"}, allowScanURL: true}
 	tests := map[string]bool{
 		"minio.internal": true,
 		"MINIO.internal": true,
@@ -131,7 +131,7 @@ func TestHostAllowed(t *testing.T) {
 
 func TestLoadScanURLConfig(t *testing.T) {
 	cfg := loadScanURLConfig(map[string]string{})
-	if cfg.allowPrivateNetworks || len(cfg.allowedHosts) != 0 || cfg.timeout != defaultScanURLTimeout {
+	if cfg.allowPrivateNetworks || len(cfg.allowedHosts) != 0 || cfg.timeout != defaultScanURLTimeout || !cfg.allowScanURL {
 		t.Errorf("unexpected defaults %+v", cfg)
 	}
 
@@ -139,9 +139,13 @@ func TestLoadScanURLConfig(t *testing.T) {
 		"SCAN_URL_ALLOW_PRIVATE_NETWORKS": "true",
 		"SCAN_URL_ALLOWED_HOSTS":          " minio.internal ;*.Amazonaws.com;",
 		"SCAN_URL_TIMEOUT":                "30s",
+		"SCAN_URL_ALLOW":                  "false",
 	})
 	if !cfg.allowPrivateNetworks {
 		t.Error("expected private networks to be allowed")
+	}
+	if cfg.allowScanURL {
+		t.Error("expected allowScanURL to be false")
 	}
 	if len(cfg.allowedHosts) != 2 || cfg.allowedHosts[0] != "minio.internal" || cfg.allowedHosts[1] != "*.amazonaws.com" {
 		t.Errorf("unexpected allowed hosts %q", cfg.allowedHosts)
@@ -193,7 +197,7 @@ func TestScanURL_Results(t *testing.T) {
 	}))
 	t.Cleanup(files.Close)
 
-	s := newURLScanner(scanURLConfig{allowPrivateNetworks: true, timeout: 200 * time.Millisecond}, clamdAddr)
+	s := newURLScanner(scanURLConfig{allowPrivateNetworks: true, timeout: 200 * time.Millisecond, allowScanURL: true}, clamdAddr)
 
 	tests := []struct {
 		path       string
@@ -233,8 +237,8 @@ func TestScanURL_Rejected(t *testing.T) {
 
 	// clamd must never be reached in these tests
 	const noClamd = "tcp://127.0.0.1:1"
-	defaults := newURLScanner(scanURLConfig{timeout: time.Second}, noClamd)
-	allowList := newURLScanner(scanURLConfig{allowPrivateNetworks: true, allowedHosts: []string{"127.0.0.1"}, timeout: time.Second}, noClamd)
+	defaults := newURLScanner(scanURLConfig{timeout: time.Second, allowScanURL: true}, noClamd)
+	allowList := newURLScanner(scanURLConfig{allowPrivateNetworks: true, allowedHosts: []string{"127.0.0.1"}, timeout: time.Second, allowScanURL: true}, noClamd)
 
 	tests := []struct {
 		name     string
