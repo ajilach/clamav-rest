@@ -6,3 +6,17 @@ metadata:
   namespace: clamav-rest
 data:
   MAX_FILE_SIZE: '100M'
+# optional: custom freshclam.conf, mounted in deployment.yaml. See "Custom freshclam.conf" in the README.
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: clamav-rest-freshclam
+#   namespace: clamav-rest
+# data:
+#   freshclam.conf: |
+#     Foreground yes
+#     DatabaseDirectory /clamav/data
+#     NotifyClamd /clamav/etc/clamd.conf
+#     PrivateMirror https://clamav-mirror.example.com
+#     ScriptedUpdates no
