@@ -51,9 +51,8 @@ terminate () {
     kill $pids 2>/dev/null
 }
 
-if [ -z "$(ls -A /clamav/data)" ]; then
-  cp /var/lib/clamav/* /clamav/data/
-fi
+# Same as in entrypoint.sh
+seed-database.sh /var/lib/clamav /clamav/data
 exitcode=0
 (
     freshclam --config-file=/clamav/etc/freshclam.conf --daemon &
