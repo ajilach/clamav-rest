@@ -55,7 +55,7 @@ This is a two in one docker image which runs the open source virus scanner ClamA
 
 ## Installation
 
-Automated builds of the image are available on [Docker Hub](https://hub.docker.com/r/ajilaag/clamav-rest) and are the recommended method of installation. Grab the lastest release:
+Automated builds of the image are available on [Docker Hub](https://hub.docker.com/r/ajilaag/clamav-rest) and are the recommended method of installation. Grab the latest release:
 
 ```bash
 docker pull ajilaag/clamav-rest
