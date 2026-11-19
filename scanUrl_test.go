@@ -225,6 +225,33 @@ func TestScanURL_Results(t *testing.T) {
 	}
 }
 
+func TestScanURL_NotAllowed(t *testing.T) {
+	files := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "hello world")
+	}))
+	t.Cleanup(files.Close)
+
+	// clamd must never be reached in these tests
+	const noClamd = "tcp://127.0.0.1:1"
+	defaults := newURLScanner(scanURLConfig{timeout: time.Second, allowScanURL: false}, noClamd)
+	test := struct {
+		name     string
+		scanner  *urlScanner
+		body     string
+		wantHTTP int
+	}{"forbidden", defaults, "", http.StatusForbidden}
+
+	t.Run(test.name, func(t *testing.T) {
+		rec, resp := doScanURL(t, test.scanner, test.body)
+		if rec.Code != test.wantHTTP || resp.Status != "ERROR" {
+			t.Errorf("got %d %+v, want %d ERROR", rec.Code, resp, test.wantHTTP)
+		}
+		if strings.Contains(rec.Body.String(), "ok") && rec.Code == http.StatusOK {
+			t.Errorf("Enpoint should return 404, but got body: %s", rec.Body.String())
+		}
+	})
+}
+
 func TestScanURL_Rejected(t *testing.T) {
 	files := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/redirect-elsewhere" {
